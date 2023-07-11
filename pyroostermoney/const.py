@@ -1,4 +1,4 @@
-VERSION="0.0.0"
+VERSION="0.0.1"
 BASE_URL="https://api.rooster.money/api/"
 LANGUAGE="en-GB"
 COUNTRY="gb"
