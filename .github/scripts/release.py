@@ -56,6 +56,10 @@ def create_new_patch_release():
     )
 
     subprocess.run(
+        ["git", "add", "pyroostermoney/const.py"]
+    )
+
+    subprocess.run(
         ["git", "commit", "-m", "\"(auto) bump version for release\""],
         check=True
     )
