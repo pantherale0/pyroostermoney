@@ -7,4 +7,5 @@ setup(name="pyroostermoney",
       url="https://github.com/pantherale0/pyroostermoney",
       author="pantherale0",
       author_email="support@system32.uk",
-      license='MIT')
+      license='MIT',
+      packages=["requests"])
