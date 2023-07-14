@@ -11,7 +11,7 @@ class RoosterMoney():
         try:
             self.session = SessionManager(self.account)
         except:
-            raise "Error."
+            raise ConnectionError("Error.")
 
     def account_info(self):
         return self.session.requests.account_info()
