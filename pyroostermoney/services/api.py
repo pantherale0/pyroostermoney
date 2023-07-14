@@ -2,7 +2,8 @@
 import json
 from types import SimpleNamespace
 import requests
-from pyroostermoney.const import COUNTRY, LANGUAGE, CURRENCY, TIMEZONE, TIMEZONE_ID, BASE_URL
+from pyroostermoney.const import COUNTRY, LANGUAGE, CURRENCY, TIMEZONE, TIMEZONE_ID, BASE_URL, MOBILE_APP_VERSION
+from pyroostermoney.services.errors import InvalidAuthError
 
 HEADERS = {
     "content-type": "application/json",
@@ -32,7 +33,7 @@ CREATE_PAYMENT_BODY={
     },
     "browserInfo": {
         "acceptHeader": "application/json",
-        "userAgent": "Mozilla/5.0 Rooster Money 10.3.0"
+        "userAgent": f"Mozilla/5.0 Rooster Money {MOBILE_APP_VERSION}"
     },
     "channel": "Android",
     "countryCode": COUNTRY.upper(),
@@ -87,6 +88,9 @@ class RequestsHandler():
             headers=HEADERS,
             json=b
         )
+
+        if r.status_code == 401:
+            raise InvalidAuthError(username, r.status_code)
 
         RequestsHandler._ensure_success(RequestsHandler._is_success(r.status_code))
 

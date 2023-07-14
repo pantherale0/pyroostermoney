@@ -6,12 +6,14 @@ from .const import DEFAULT_BANK_NAME, DEFAULT_BANK_TYPE
 
 class RoosterMoney():
 
+    def __init__(self) -> None:
+        self.account = None
+        self.session = None
+
     def login(self, username, password):
+        """Starts a session to Rooster Money and logs into the API."""
         self.account = ParentLoginManager(username, password)
-        try:
-            self.session = SessionManager(self.account)
-        except:
-            raise ConnectionError("Error.")
+        self.session = SessionManager(self.account)
 
     def account_info(self):
         return self.session.requests.account_info()
