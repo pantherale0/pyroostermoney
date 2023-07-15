@@ -55,7 +55,8 @@ class RoosterSession:
 
         login_response = await self.internal_request_handler(url=URLS.get("login"),
                                                               body=req_body,
-                                                              auth=auth)
+                                                              auth=auth,
+                                                              headers=HEADERS)
 
         if login_response["status"] == 401:
             raise InvalidAuthError(self._username, login_response["status"])
@@ -89,7 +90,9 @@ class RoosterSession:
             raise RuntimeError("Invalid state. Missing session data yet currently logged in?")
         elif self._session is None and self._logged_in is False and auth is not None:
             _LOGGER.info("Not logged in, trying now.")
-            return await _post_request(url, body, auth, self._headers)
+            if headers is None:
+                headers = self._headers
+            return await _post_request(url, body, auth, headers)
         elif self._session is None and self._logged_in is False and auth is None:
             raise NotLoggedIn()
         elif self._session is not None and self._logged_in is False:

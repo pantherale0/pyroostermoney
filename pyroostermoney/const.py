@@ -1,6 +1,6 @@
 """Static Rooster Money variables"""
 
-VERSION="0.1.2"
+VERSION="0.1.3"
 BASE_URL="https://api.rooster.money"
 LANGUAGE="en-GB"
 COUNTRY="gb"
