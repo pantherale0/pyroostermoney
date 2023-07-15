@@ -1,5 +1,6 @@
 """Defines some standard values for a Natwest Rooster Money child."""
 
+import asyncio
 import datetime
 
 from pyroostermoney.const import URLS
@@ -9,6 +10,17 @@ class ChildAccount:
     """The child account."""
 
     def __init__(self, raw_response: dict, session: RoosterSession) -> None:
+        self._parse_response(raw_response)
+        self._session = session
+
+    async def update(self):
+        """Updates the cached data for this child."""
+        response = await self._session.internal_request_handler(
+            url=URLS.get("get_child").format(user_id=self.user_id))
+        self._parse_response(response)
+
+    def _parse_response(self, raw_response:dict):
+        """Parses the raw_response into this object"""
         if "response" in raw_response:
             raw_response = raw_response["response"]
         self.interest_rate = raw_response["interestRate"]
@@ -19,7 +31,6 @@ class ChildAccount:
         self.gender = "male" if raw_response["gender"] == 1 else "female"
         self.uses_real_money = True if raw_response["realMoneyStatus"] == 1 else False
         self.user_id = raw_response["userId"]
-        self._session = session
 
     async def get_active_allowance_period(self):
         """Returns the current active allowance period."""
