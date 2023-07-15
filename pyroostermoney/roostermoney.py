@@ -2,8 +2,8 @@
 
 import json
 import logging
-import aiohttp
 from datetime import datetime, timedelta
+import aiohttp
 
 from .const import BASE_URL, HEADERS, LOGIN_BODY, URLS
 from .exceptions import InvalidAuthError, NotLoggedIn, AuthenticationExpired
@@ -11,7 +11,9 @@ from .child import ChildAccount
 
 _LOGGER = logging.getLogger(__name__)
 
-async def _fetch_request(url, headers=HEADERS):
+async def _fetch_request(url, headers=None):
+    if headers is None:
+        headers=HEADERS
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{BASE_URL}/{url}", headers=headers) as response:
             text = await response.text()
@@ -19,10 +21,15 @@ async def _fetch_request(url, headers=HEADERS):
                 "status": response.status,
                 "response": json.loads(text)
             }
-        
-async def _post_request(url, body: dict, auth=None, headers=HEADERS):
+
+async def _post_request(url, body: dict, auth=None, headers=None):
+    if headers is None:
+        headers=HEADERS
     async with aiohttp.ClientSession() as session:
-        async with session.post(f"{BASE_URL}/{url}", json=body, headers=headers, auth=auth) as response:
+        async with session.post(f"{BASE_URL}/{url}",
+                                json=body,
+                                headers=headers,
+                                auth=auth) as response:
             text = await response.text()
             return {
                 "status": response.status,
@@ -39,7 +46,12 @@ class RoosterMoney:
         self._headers = HEADERS
         self._logged_in = False
 
-    async def _internal_request_handler(self, url, body=None, headers=None, auth=None, type="GET"):
+    async def _internal_request_handler(self,
+                                        url,
+                                        body=None,
+                                        headers=None,
+                                        auth=None,
+                                        method="GET"):
         """Handles all incoming requests to make sure that the session is active."""
         if self._session is None and self._logged_in:
             raise RuntimeError("Invalid state. Missing session data yet currently logged in?")
@@ -59,9 +71,9 @@ class RoosterMoney:
         if headers is None:
             headers = self._headers
 
-        if type == "GET":
+        if method == "GET":
             return await _fetch_request(url, headers=headers)
-        elif type == "POST":
+        elif method == "POST":
             return await _post_request(url, body=body, headers=headers)
         else:
             raise ValueError("Invalid type argument.")
@@ -71,8 +83,11 @@ class RoosterMoney:
         req_body = LOGIN_BODY
         req_body["username"] = self._username
         req_body["password"] = self._password
+        auth = aiohttp.BasicAuth(self._username, self._password)
 
-        login_response = await self._internal_request_handler(url=URLS.get("login"), body=req_body, auth=aiohttp.BasicAuth(self._username, self._password))
+        login_response = await self._internal_request_handler(url=URLS.get("login"),
+                                                              body=req_body,
+                                                              auth=auth)
 
         if login_response["status"] == 401:
             raise InvalidAuthError(self._username, login_response["status"])
@@ -86,7 +101,10 @@ class RoosterMoney:
             "expiry_time": datetime.now() + timedelta(0, login_response["tokens"]["expires_in"])
         }
 
-        self._headers["Authorization"] = f"{self._session['token_type']} {self._session['access_token']}"
+        token_type = login_response["tokens"]["token_type"]
+        access_token = login_response["tokens"]["access_token"]
+
+        self._headers["Authorization"] = f"{token_type} {access_token}"
 
         self._logged_in = True
 
@@ -98,6 +116,7 @@ class RoosterMoney:
 
     async def get_child_account(self, user_id) -> ChildAccount:
         """Fetches and returns a given child account details."""
-        response = await self._internal_request_handler(url=URLS.get("get_child").format(user_id=user_id))
+        response = await self._internal_request_handler(
+            url=URLS.get("get_child").format(user_id=user_id))
 
         return ChildAccount(response)

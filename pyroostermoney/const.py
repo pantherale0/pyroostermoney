@@ -1,3 +1,5 @@
+"""Static Rooster Money variables"""
+
 VERSION="0.1.0"
 BASE_URL="https://api.rooster.money"
 LANGUAGE="en-GB"

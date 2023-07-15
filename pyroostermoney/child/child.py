@@ -1,8 +1,5 @@
 """The main child account class and further actions."""
 
-from typing import Any
-
-
 class ChildAccount:
     """The child account."""
 
@@ -15,4 +12,3 @@ class ChildAccount:
         self.surname = raw_response["surname"]
         self.gender = "male" if raw_response["gender"] == 1 else "female"
         self.uses_real_money = True if raw_response["realMoneyStatus"] == 1 else False
-
