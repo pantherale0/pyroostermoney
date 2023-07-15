@@ -17,6 +17,15 @@ class RoosterMoney(RoosterSession):
             password=password
         )
 
+    async def get_children(self) -> list[ChildAccount]:
+        """Returns a list of available children."""
+        account_info = await self.get_account_info()
+        children = account_info["response"]["children"]
+        output = []
+        for child in children:
+            output.append(ChildAccount(child, self))
+        return output
+
     async def get_account_info(self) -> dict:
         """Returns the account info for the current user."""
         return await self.internal_request_handler(url=URLS.get("get_account_info"))
