@@ -9,4 +9,4 @@ setup(name="pyroostermoney",
       author="pantherale0",
       author_email="support@system32.uk",
       license='MIT',
-      install_requires="requests")
+      install_requires="aiohttp")
