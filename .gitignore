@@ -164,3 +164,6 @@ test.py
 
 # vscode
 .vscode/
+
+# old files
+*.old/
