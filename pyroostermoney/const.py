@@ -14,7 +14,17 @@ MOBILE_APP_VERSION="10.3.1"
 
 URLS = {
     "login": "api/v1/parent",
-    "get_child": "api/parent/child/{user_id}"
+    "get_account_info": "api/parent",
+    "get_child": "api/parent/child/{user_id}",
+    "get_child_allowance_periods": "api/parent/child/{user_id}/allowance-periods",
+    "get_top_up_methods": "api/parent/acquirer/topup/methods?currency={currency}",
+    "get_available_cards": "api/parent/acquirer/cards",
+    "get_family_account": "api/parent/family/account",
+    "get_child_pocket_money": "api/parent/child/{user_id}/pocketmoney",
+    "get_child_allowance_period_jobs": "api/parent/child/{user_id}/allowance-periods/{allowance_period_id}",
+    "get_master_jobs": "api/parent/master-jobs",
+    "get_child_spend_history": "api/parent/child/{user_id}/spendHistory?count={count}",
+    "create_payment": "api/parent/acquirer/create-payment"
 }
 
 HEADERS = {
@@ -35,4 +45,29 @@ LOGIN_BODY={
     "timeZoneId": TIMEZONE_ID,
     "timezone": TIMEZONE,
     "username": None
+}
+
+CREATE_PAYMENT_BODY={
+    "adyenAPIVersion": "v67",
+    "amount": {
+        "currency": CURRENCY,
+        "value": 0
+    },
+    "browserInfo": {
+        "acceptHeader": "application/json",
+        "userAgent": f"Mozilla/5.0 Rooster Money {MOBILE_APP_VERSION}"
+    },
+    "channel": "Android",
+    "countryCode": COUNTRY.upper(),
+    "isPreAuth": False,
+    "paymentMethod": {
+        "encryptedCardNumber": "",
+        "encryptedExpiryMonth": "",
+        "encryptedExpiryYear": "",
+        "encryptedSecurityCode": "",
+        "holderName": "",
+        "type": "scheme"
+    },
+    "returnUrl": "roostermoneyapp://",
+    "shopperEmail": ""
 }
