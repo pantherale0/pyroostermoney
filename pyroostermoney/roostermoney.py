@@ -24,7 +24,9 @@ class RoosterMoney(RoosterSession):
         children = account_info["response"]["children"]
         output = []
         for child in children:
-            output.append(ChildAccount(child, self))
+            child = ChildAccount(child, self)
+            await child.perform_init() # calling this will init some extra props.
+            output.append(child)
         return output
 
     async def get_account_info(self) -> dict:
@@ -36,7 +38,10 @@ class RoosterMoney(RoosterSession):
         response = await self.request_handler(
             url=URLS.get("get_child").format(user_id=user_id))
 
-        return ChildAccount(response, self)
+        child = ChildAccount(response, self)
+        await child.perform_init()
+
+        return child
 
     async def get_master_job_list(self):
         """Gets master job list (/parent/master-jobs)"""

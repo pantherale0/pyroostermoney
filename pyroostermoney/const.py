@@ -29,7 +29,9 @@ URLS = {
     "get_child_allowance_period_jobs": "api/parent/child/{user_id}/allowance-periods/{allowance_period_id}",
     "get_master_jobs": "api/parent/master-jobs",
     "get_child_spend_history": "api/parent/child/{user_id}/spendHistory?count={count}",
-    "create_payment": "api/parent/acquirer/create-payment"
+    "create_payment": "api/parent/acquirer/create-payment",
+    "get_child_card_details": "api/parent/child/{user_id}/card/details",
+    "get_child_card_pin": "api/parent/child/{user_id}/cards/{card_id}/pin"
 }
 
 HEADERS = {

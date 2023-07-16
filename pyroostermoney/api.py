@@ -2,6 +2,7 @@
 
 import json
 import logging
+import base64
 from datetime import datetime, timedelta
 
 import aiohttp
@@ -75,7 +76,8 @@ class RoosterSession:
             "access_token": login_response["tokens"]["access_token"],
             "refresh_token": login_response["tokens"]["refresh_token"],
             "token_type": login_response["tokens"]["token_type"],
-            "expiry_time": datetime.now() + timedelta(0, login_response["tokens"]["expires_in"])
+            "expiry_time": datetime.now() + timedelta(0, login_response["tokens"]["expires_in"]),
+            "security_code": base64.b64encode(str(self._password[::1]).encode('ascii'))
         }
 
         token_type = login_response["tokens"]["token_type"]
@@ -95,6 +97,9 @@ class RoosterSession:
                                         method="GET",
                                         login_request=False):
         """Handles all incoming requests to make sure that the session is active."""
+        if "securitytoken" in headers:
+            headers["securitytoken"] = self._session["security_code"]
+
         if self._session is None and self._logged_in:
             raise RuntimeError("Invalid state. Missing session data yet currently logged in?")
         elif self._session is None and self._logged_in is False and auth is not None:

@@ -4,8 +4,9 @@ import asyncio
 import datetime
 
 from pyroostermoney.const import URLS
-from .money_pot import Pot, convert_response as MoneyPotConverter
 from pyroostermoney.api import RoosterSession
+from .money_pot import Pot, convert_response as MoneyPotConverter
+from .card import Card
 
 class ChildAccount:
     """The child account."""
@@ -13,7 +14,13 @@ class ChildAccount:
     def __init__(self, raw_response: dict, session: RoosterSession) -> None:
         self._parse_response(raw_response)
         self._session = session
-        self.pots = []
+        self.pots: list[Pot] = []
+        self.card: Card = None
+
+    async def perform_init(self):
+        """Performs init for some internal async props."""
+        await self.get_pocket_money()
+        await self.get_card_details()
 
     async def update(self):
         """Updates the cached data for this child."""
@@ -89,3 +96,12 @@ class ChildAccount:
             "save": pocket_money["safeTotal"],
             "give": pocket_money["giveAmount"]
         }
+
+    async def get_card_details(self):
+        """Returns the card details for the child."""
+        card_details = await self._session.request_handler(
+            URLS.get("get_child_card_details")
+        )
+
+        self.card = Card(card_details["response"], self.user_id, self._session)
+        return self.card
