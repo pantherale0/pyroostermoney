@@ -41,6 +41,7 @@ class ChildAccount:
         self.gender = "male" if raw_response["gender"] == 1 else "female"
         self.uses_real_money = True if raw_response["realMoneyStatus"] == 1 else False
         self.user_id = raw_response["userId"]
+        self.profile_image = raw_response["profileImageUrl"]
 
     async def get_active_allowance_period(self):
         """Returns the current active allowance period."""
