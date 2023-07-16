@@ -22,7 +22,7 @@ class FamilyAccount:
         amount = raw_response["suggestedMonthlyTransfer"]["amount"]
         self.suggested_monthly_transfer = amount / (1 * 10**self._precision)
         self.currency = raw_response["suggestedMonthlyTransfer"]["currency"]
-        self.balance = account_info["familyLedgerBalance"]
+        self.balance = account_info.get("familyLedgerBalance", None)
 
     async def update(self):
         """Updates the FamilyAccount object data."""
