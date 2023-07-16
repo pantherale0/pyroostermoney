@@ -1,7 +1,7 @@
 # pylint: disable=line-too-long
 """Static Rooster Money variables"""
 
-VERSION="0.1.6"
+VERSION="0.1.7"
 BASE_URL="https://api.rooster.money"
 LANGUAGE="en-GB"
 COUNTRY="gb"
