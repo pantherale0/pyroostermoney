@@ -25,7 +25,8 @@ class Card:
             url=URLS.get("get_child_card_pin").format(
                 user_id=self.user_id,
                 card_id=card_id
-            )
+            ),
+            add_security_token=True
         )
 
         response: dict = response["response"]

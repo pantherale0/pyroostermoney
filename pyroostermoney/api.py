@@ -95,10 +95,9 @@ class RoosterSession:
                                         headers=None,
                                         auth=None,
                                         method="GET",
-                                        login_request=False):
+                                        login_request=False,
+                                        add_security_token=False):
         """Handles all incoming requests to make sure that the session is active."""
-        if "securitytoken" in headers:
-            headers["securitytoken"] = self._session["security_code"]
 
         if self._session is None and self._logged_in:
             raise RuntimeError("Invalid state. Missing session data yet currently logged in?")
@@ -124,6 +123,9 @@ class RoosterSession:
         if headers is None:
             headers = self._headers
 
+        if add_security_token:
+            headers["securitytoken"] = self._session["security_code"]
+
         if method == "GET":
             return await _fetch_request(url, headers=headers)
         elif method == "POST":
@@ -137,7 +139,8 @@ class RoosterSession:
                                         headers=None,
                                         auth=None,
                                         method="GET",
-                                        login_request=False):
+                                        login_request=False,
+                                        add_security_token=False):
         """Public calls for the private _internal_request_handler."""
         try:
             return await self._internal_request_handler(
@@ -146,7 +149,8 @@ class RoosterSession:
                 headers=headers,
                 auth=auth,
                 method=method,
-                login_request=login_request
+                login_request=login_request,
+                add_security_token=add_security_token
             )
         except AuthenticationExpired:
             await self.async_login()
