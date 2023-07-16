@@ -3,6 +3,7 @@
 import json
 import logging
 import base64
+import asyncio
 from datetime import datetime, timedelta
 
 import aiohttp
@@ -46,47 +47,56 @@ class RoosterSession:
         self._session = None
         self._headers = HEADERS
         self._logged_in = False
+        self._logging_in = asyncio.Lock()
 
     async def async_login(self):
         """Logs into RoosterMoney and starts a new active session."""
-        if self._session is not None:
-            if self._session.get("expiry_time") > datetime.now():
-                _LOGGER.debug("Not logging in again, session already active.")
-                return True
+        if self._logging_in.locked():
+            _LOGGER.warning("Login already attempting. Only one execution allowed.")
+            while self._logging_in.locked():
+                await asyncio.sleep(1)
+            return True
 
-        req_body = LOGIN_BODY
-        req_body["username"] = self._username
-        req_body["password"] = self._password
-        auth = aiohttp.BasicAuth(self._username, self._password)
+        async with self._logging_in:
+            if self._session is not None:
+                if self._session.get("expiry_time") > datetime.now():
+                    _LOGGER.debug("Not logging in again, session already active.")
+                    return True
 
-        if "Authorization" in self._headers:
-            self._headers.pop("Authorization")
+            req_body = LOGIN_BODY
+            req_body["username"] = self._username
+            req_body["password"] = self._password
+            auth = aiohttp.BasicAuth(self._username, self._password)
 
-        login_response = await self.request_handler(url=URLS.get("login"),
-                                                              body=req_body,
-                                                              auth=auth,
-                                                              headers=self._headers)
+            if "Authorization" in self._headers:
+                self._headers.pop("Authorization")
 
-        if login_response["status"] == 401:
-            raise InvalidAuthError(self._username, login_response["status"])
+            login_response = await self.request_handler(url=URLS.get("login"),
+                                                                body=req_body,
+                                                                auth=auth,
+                                                                headers=self._headers)
 
-        login_response = login_response["response"]
-        token = base64.b64encode(str(self._password[::-1]).encode('utf-8')).decode('utf-8')
+            if login_response["status"] == 401:
+                raise InvalidAuthError(self._username, login_response["status"])
 
-        self._session = {
-            "access_token": login_response["tokens"]["access_token"],
-            "refresh_token": login_response["tokens"]["refresh_token"],
-            "token_type": login_response["tokens"]["token_type"],
-            "expiry_time": datetime.now() + timedelta(0, login_response["tokens"]["expires_in"]),
-            "security_code": token
-        }
+            login_response = login_response["response"]
+            token = base64.b64encode(str(self._password[::-1]).encode('utf-8')).decode('utf-8')
 
-        token_type = login_response["tokens"]["token_type"]
-        access_token = login_response["tokens"]["access_token"]
+            self._session = {
+                "access_token": login_response["tokens"]["access_token"],
+                "refresh_token": login_response["tokens"]["refresh_token"],
+                "token_type": login_response["tokens"]["token_type"],
+                "expiry_time": datetime.now() + timedelta(0,
+                                                          login_response["tokens"]["expires_in"]),
+                "security_code": token
+            }
 
-        self._headers["Authorization"] = f"{token_type} {access_token}"
+            token_type = login_response["tokens"]["token_type"]
+            access_token = login_response["tokens"]["access_token"]
 
-        self._logged_in = True
+            self._headers["Authorization"] = f"{token_type} {access_token}"
+
+            self._logged_in = True
 
         return True
 
@@ -111,12 +121,11 @@ class RoosterSession:
             raise NotLoggedIn()
         elif self._session is not None and self._logged_in is False:
             raise RuntimeError("Invalid state. Session data available yet not logged in?")
-
-        # Check if auth has expired
-
-        if login_request:
+        elif self._session["expiry_time"] < datetime.now() and login_request:
             _LOGGER.debug("Login request.")
             return await _post_request(url, body, auth, headers)
+
+        # Check if auth has expired
 
         if self._session["expiry_time"] < datetime.now():
             raise AuthenticationExpired()
