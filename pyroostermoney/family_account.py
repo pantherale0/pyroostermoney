@@ -24,7 +24,7 @@ class FamilyAccount:
 
     async def update(self):
         """Updates the FamilyAccount object data."""
-        response = await self._session.internal_request_handler(
+        response = await self._session.request_handler(
             url=URLS.get("get_family_account"))
         self._parse_response(response)
 
@@ -55,7 +55,7 @@ class FamilyAccount:
         request_body["paymentMethod"]["holderName"] = holder_name
         ## TODO request_body["shopperEmail"] = self.account_info.email
 
-        response = await self._session.internal_request_handler(
+        response = await self._session.request_handler(
             url=URLS.get("create_payment"),
             body=request_body,
             method="POST"
@@ -65,7 +65,7 @@ class FamilyAccount:
 
     async def get_available_cards(self):
         """Gets available top up payment cards"""
-        response = await self._session.internal_request_handler(
+        response = await self._session.request_handler(
             url=URLS.get("get_available_cards")
         )
 
@@ -76,7 +76,7 @@ class FamilyAccount:
         if currency is None:
             currency=CURRENCY
 
-        response = await self._session.internal_request_handler(
+        response = await self._session.request_handler(
             url=URLS.get("get_top_up_methods").format(
                 currency=currency
             )

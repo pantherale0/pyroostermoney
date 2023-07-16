@@ -48,15 +48,23 @@ class RoosterSession:
 
     async def async_login(self):
         """Logs into RoosterMoney and starts a new active session."""
+        if self._session is not None:
+            if self._session.get("expiry_time") > datetime.now():
+                _LOGGER.debug("Not logging in again, session already active.")
+                return True
+
         req_body = LOGIN_BODY
         req_body["username"] = self._username
         req_body["password"] = self._password
         auth = aiohttp.BasicAuth(self._username, self._password)
 
-        login_response = await self.internal_request_handler(url=URLS.get("login"),
+        if "Authorization" in self._headers:
+            self._headers.pop("Authorization")
+
+        login_response = await self.request_handler(url=URLS.get("login"),
                                                               body=req_body,
                                                               auth=auth,
-                                                              headers=HEADERS)
+                                                              headers=self._headers)
 
         if login_response["status"] == 401:
             raise InvalidAuthError(self._username, login_response["status"])
@@ -79,12 +87,13 @@ class RoosterSession:
 
         return True
 
-    async def internal_request_handler(self,
+    async def _internal_request_handler(self,
                                         url,
                                         body=None,
                                         headers=None,
                                         auth=None,
-                                        method="GET"):
+                                        method="GET",
+                                        login_request=False):
         """Handles all incoming requests to make sure that the session is active."""
         if self._session is None and self._logged_in:
             raise RuntimeError("Invalid state. Missing session data yet currently logged in?")
@@ -100,6 +109,10 @@ class RoosterSession:
 
         # Check if auth has expired
 
+        if login_request:
+            _LOGGER.debug("Login request.")
+            return await _post_request(url, body, auth, headers)
+
         if self._session["expiry_time"] < datetime.now():
             raise AuthenticationExpired()
 
@@ -112,3 +125,35 @@ class RoosterSession:
             return await _post_request(url, body=body, headers=headers)
         else:
             raise ValueError("Invalid type argument.")
+
+    async def request_handler(self,
+                                        url,
+                                        body=None,
+                                        headers=None,
+                                        auth=None,
+                                        method="GET",
+                                        login_request=False):
+        """Public calls for the private _internal_request_handler."""
+        try:
+            return await self._internal_request_handler(
+                url=url,
+                body=body,
+                headers=headers,
+                auth=auth,
+                method=method,
+                login_request=login_request
+            )
+        except AuthenticationExpired:
+            await self.async_login()
+            return await self._internal_request_handler(
+                url=url,
+                body=body,
+                headers=headers,
+                auth=auth,
+                method=method,
+                login_request=login_request
+            )
+        except NotLoggedIn:
+            raise NotLoggedIn()
+        except Exception as err:
+            _LOGGER.error(err)

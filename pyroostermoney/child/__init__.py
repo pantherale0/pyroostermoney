@@ -15,7 +15,7 @@ class ChildAccount:
 
     async def update(self):
         """Updates the cached data for this child."""
-        response = await self._session.internal_request_handler(
+        response = await self._session.request_handler(
             url=URLS.get("get_child").format(user_id=self.user_id))
         self._parse_response(response)
 
@@ -34,7 +34,7 @@ class ChildAccount:
 
     async def get_active_allowance_period(self):
         """Returns the current active allowance period."""
-        allowance_periods = await self._session.internal_request_handler(
+        allowance_periods = await self._session.request_handler(
             url=URLS.get("get_child_allowance_periods").format(user_id=self.user_id))
         allowance_periods = allowance_periods["response"]
         active_periods = [p for p in allowance_periods
@@ -51,7 +51,7 @@ class ChildAccount:
             user_id=self.user_id,
             count=count
         )
-        response = await self._session.internal_request_handler(url=url)
+        response = await self._session.request_handler(url=url)
 
         return response["response"]
 
@@ -61,7 +61,7 @@ class ChildAccount:
             user_id=self.user_id,
             allowance_period_id=allowance_period_id
         )
-        response = await self._session.internal_request_handler(url)
+        response = await self._session.request_handler(url)
 
         return response["response"]
 
@@ -70,7 +70,7 @@ class ChildAccount:
         url = URLS.get("get_child_pocket_money").format(
             user_id=self.user_id
         )
-        response = await self._session.internal_request_handler(url)
+        response = await self._session.request_handler(url)
 
         return response["response"]
 

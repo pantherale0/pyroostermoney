@@ -29,18 +29,18 @@ class RoosterMoney(RoosterSession):
 
     async def get_account_info(self) -> dict:
         """Returns the account info for the current user."""
-        return await self.internal_request_handler(url=URLS.get("get_account_info"))
+        return await self.request_handler(url=URLS.get("get_account_info"))
 
     async def get_child_account(self, user_id) -> ChildAccount:
         """Fetches and returns a given child account details."""
-        response = await self.internal_request_handler(
+        response = await self.request_handler(
             url=URLS.get("get_child").format(user_id=user_id))
 
         return ChildAccount(response, self)
 
     async def get_master_job_list(self):
         """Gets master job list (/parent/master-jobs)"""
-        response = await self.internal_request_handler(
+        response = await self.request_handler(
             url=URLS.get("get_master_job_list")
         )
 
@@ -48,7 +48,7 @@ class RoosterMoney(RoosterSession):
 
     async def get_family_account(self) -> FamilyAccount:
         """Gets family account details (/parent/family/account)"""
-        response = await self.internal_request_handler(
+        response = await self.request_handler(
             url=URLS.get("get_family_account")
         )
 
