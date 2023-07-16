@@ -4,6 +4,7 @@ import asyncio
 import datetime
 
 from pyroostermoney.const import URLS
+from .money_pot import Pot, convert_response as MoneyPotConverter
 from pyroostermoney.api import RoosterSession
 
 class ChildAccount:
@@ -12,12 +13,14 @@ class ChildAccount:
     def __init__(self, raw_response: dict, session: RoosterSession) -> None:
         self._parse_response(raw_response)
         self._session = session
+        self.pots = []
 
     async def update(self):
         """Updates the cached data for this child."""
         response = await self._session.request_handler(
             url=URLS.get("get_child").format(user_id=self.user_id))
         self._parse_response(response)
+        await self.get_pocket_money()
 
     def _parse_response(self, raw_response:dict):
         """Parses the raw_response into this object"""
@@ -71,6 +74,7 @@ class ChildAccount:
             user_id=self.user_id
         )
         response = await self._session.request_handler(url)
+        self.pots: list[Pot] = MoneyPotConverter(response["response"])
 
         return response["response"]
 

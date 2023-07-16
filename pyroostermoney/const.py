@@ -12,6 +12,11 @@ DEFAULT_BANK_NAME="Rooster Money"
 DEFAULT_BANK_TYPE="Business"
 MOBILE_APP_VERSION="10.3.1"
 
+SAVINGS_POT_ID="savings"
+SPEND_POT_ID="spend"
+GIVE_POT_ID="give"
+GOAL_POT_ID="goal"
+
 URLS = {
     "login": "api/v1/parent",
     "get_account_info": "api/parent",
