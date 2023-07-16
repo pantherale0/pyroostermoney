@@ -17,11 +17,12 @@ class RoosterMoney(RoosterSession):
             username=username,
             password=password
         )
+        self.account_info = None
 
     async def get_children(self) -> list[ChildAccount]:
         """Returns a list of available children."""
         account_info = await self.get_account_info()
-        children = account_info["response"]["children"]
+        children = account_info["children"]
         output = []
         for child in children:
             child = ChildAccount(child, self)
@@ -31,7 +32,9 @@ class RoosterMoney(RoosterSession):
 
     async def get_account_info(self) -> dict:
         """Returns the account info for the current user."""
-        return await self.request_handler(url=URLS.get("get_account_info"))
+        self.account_info = await self.request_handler(url=URLS.get("get_account_info"))
+        self.account_info = self.account_info["response"]
+        return self.account_info
 
     async def get_child_account(self, user_id) -> ChildAccount:
         """Fetches and returns a given child account details."""
@@ -56,5 +59,5 @@ class RoosterMoney(RoosterSession):
         response = await self.request_handler(
             url=URLS.get("get_family_account")
         )
-
-        return FamilyAccount(response["response"], self)
+        account = await self.get_account_info()
+        return FamilyAccount(response["response"], account, self)

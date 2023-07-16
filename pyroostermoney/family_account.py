@@ -7,11 +7,11 @@ from .const import URLS, DEFAULT_BANK_NAME, DEFAULT_BANK_TYPE, CREATE_PAYMENT_BO
 class FamilyAccount:
     """A family account."""
 
-    def __init__(self, raw_response: dict, session: RoosterSession) -> None:
+    def __init__(self, raw_response: dict, account_info: dict, session: RoosterSession) -> None:
         self._session = session
-        self._parse_response(raw_response)
+        self._parse_response(raw_response, account_info)
 
-    def _parse_response(self, raw_response: dict):
+    def _parse_response(self, raw_response: dict, account_info: dict):
         """Parses the raw response."""
         if "response" in raw_response:
             raw_response = raw_response["response"]
@@ -22,12 +22,16 @@ class FamilyAccount:
         amount = raw_response["suggestedMonthlyTransfer"]["amount"]
         self.suggested_monthly_transfer = amount / (1 * 10**self._precision)
         self.currency = raw_response["suggestedMonthlyTransfer"]["currency"]
+        self.balance = account_info["familyLedgerBalance"]
 
     async def update(self):
         """Updates the FamilyAccount object data."""
-        response = await self._session.request_handler(
+        family_account = await self._session.request_handler(
             url=URLS.get("get_family_account"))
-        self._parse_response(response)
+        account = await self._session.request_handler(
+            url=URLS.get("get_account_info")
+        )
+        self._parse_response(raw_response=family_account, account_info=account)
 
     @property
     def bank_transfer_details(self):
