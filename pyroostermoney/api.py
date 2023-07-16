@@ -71,13 +71,14 @@ class RoosterSession:
             raise InvalidAuthError(self._username, login_response["status"])
 
         login_response = login_response["response"]
+        token = base64.b64encode(str(self._password[::-1]).encode('utf-8')).decode('utf-8')
 
         self._session = {
             "access_token": login_response["tokens"]["access_token"],
             "refresh_token": login_response["tokens"]["refresh_token"],
             "token_type": login_response["tokens"]["token_type"],
             "expiry_time": datetime.now() + timedelta(0, login_response["tokens"]["expires_in"]),
-            "security_code": base64.b64encode(str(self._password[::1]).encode('ascii'))
+            "security_code": token
         }
 
         token_type = login_response["tokens"]["token_type"]
@@ -162,7 +163,5 @@ class RoosterSession:
                 method=method,
                 login_request=login_request
             )
-        except NotLoggedIn:
-            raise NotLoggedIn()
-        except Exception as err:
-            _LOGGER.error(err)
+        except NotLoggedIn as exc:
+            raise NotLoggedIn() from exc

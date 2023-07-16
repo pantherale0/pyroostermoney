@@ -1,3 +1,4 @@
+# pylint: disable=fixme
 """Defines the class for the family account."""
 
 from .api import RoosterSession

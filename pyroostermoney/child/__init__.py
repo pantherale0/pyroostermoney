@@ -100,8 +100,11 @@ class ChildAccount:
     async def get_card_details(self):
         """Returns the card details for the child."""
         card_details = await self._session.request_handler(
-            URLS.get("get_child_card_details")
+            URLS.get("get_child_card_details").format(
+                user_id=self.user_id
+            )
         )
 
         self.card = Card(card_details["response"], self.user_id, self._session)
+        await self.card.init_card_pin()
         return self.card

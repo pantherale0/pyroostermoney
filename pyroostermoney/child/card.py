@@ -19,12 +19,28 @@ class Card:
         self.user_id = user_id
         self.pin = None
 
-    async def init_card_pin(self, card_id) -> None:
+    async def init_card_pin(self) -> None:
         """initializes the card pin."""
-        response = self._session.request_handler(
+        # first we need to get the family cards
+        response = await self._session.request_handler(
+            url=URLS.get("get_family_account_cards")
+        )
+
+        if response["status"] == 200:
+            # get the card for the current user_id
+            for card in response["response"]:
+                if card["childId"] == self.user_id:
+                    response = card
+                    break
+
+        # if status is still in response, we didn't get a card
+        if "status" in response:
+            raise ValueError(f"No card found for {self.user_id}")
+
+        response = await self._session.request_handler(
             url=URLS.get("get_child_card_pin").format(
                 user_id=self.user_id,
-                card_id=card_id
+                card_id=response["cardId"]
             ),
             add_security_token=True
         )

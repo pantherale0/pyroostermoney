@@ -1,3 +1,4 @@
+# pylint: disable=line-too-long
 """Static Rooster Money variables"""
 
 VERSION="0.1.4"
@@ -31,7 +32,8 @@ URLS = {
     "get_child_spend_history": "api/parent/child/{user_id}/spendHistory?count={count}",
     "create_payment": "api/parent/acquirer/create-payment",
     "get_child_card_details": "api/parent/child/{user_id}/card/details",
-    "get_child_card_pin": "api/parent/child/{user_id}/cards/{card_id}/pin"
+    "get_child_card_pin": "api/parent/child/{user_id}/cards/{card_id}/pin",
+    "get_family_account_cards": "api/parent/family/cards"
 }
 
 HEADERS = {
