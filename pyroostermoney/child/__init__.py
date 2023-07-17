@@ -9,6 +9,7 @@ from .money_pot import Pot, convert_response as MoneyPotConverter
 from .card import Card
 from .standing_order import StandingOrder, convert_response as StandingOrderConverter
 from .jobs import Job
+from .transaction import Transaction
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +24,8 @@ class ChildAccount:
         self.standing_orders: list[StandingOrder] = []
         self.jobs: list[Job] = []
         self.active_allowance_period_id: int = None
+        self.transactions: list[Transaction] = []
+        self.latest_transaction: Transaction = None
         self._exclude_card = False
         self._update_lock = asyncio.Lock()
         if self._session.use_updater:
@@ -56,6 +59,7 @@ class ChildAccount:
         await self.get_standing_orders()
         await self.get_active_allowance_period()
         await self.get_current_jobs()
+        await self.get_spend_history()
 
     async def update(self):
         """Updates the cached data for this child."""
@@ -101,15 +105,16 @@ class ChildAccount:
 
         return active_periods
 
-    async def get_spend_history(self, count=10):
+    async def get_spend_history(self, count=10) -> list[Transaction]:
         """Gets the spend history"""
         url = URLS.get("get_child_spend_history").format(
             user_id=self.user_id,
             count=count
         )
         response = await self._session.request_handler(url=url)
-
-        return response["response"]
+        self.transactions = Transaction.parse_response(response["response"])
+        self.latest_transaction = self.transactions[len(self.transactions)-1]
+        return self.transactions
 
     async def get_current_jobs(self) -> list[Job]:
         """Gets jobs for the current allowance period."""
