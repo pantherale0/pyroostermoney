@@ -174,3 +174,11 @@ class RoosterSession:
             )
         except NotLoggedIn as exc:
             raise NotLoggedIn() from exc
+        except aiohttp.ClientOSError as exc:
+            # silent exc handler
+            if exc.errno == 104: # connection reset by peer
+                asyncio.sleep(5)
+                _LOGGER.debug("Connection reset by peer - retrying request.")
+                await self.request_handler(**locals())
+            else:
+                raise aiohttp.ClientOSError from exc
