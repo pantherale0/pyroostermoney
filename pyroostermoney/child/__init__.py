@@ -7,6 +7,7 @@ from pyroostermoney.const import URLS
 from pyroostermoney.api import RoosterSession
 from .money_pot import Pot, convert_response as MoneyPotConverter
 from .card import Card
+from .standing_order import StandingOrder, convert_response as StandingOrderConverter
 
 class ChildAccount:
     """The child account."""
@@ -16,11 +17,13 @@ class ChildAccount:
         self._session = session
         self.pots: list[Pot] = []
         self.card: Card = None
+        self.standing_orders: list[StandingOrder] = []
 
     async def perform_init(self):
         """Performs init for some internal async props."""
         await self.get_pocket_money()
         await self.get_card_details()
+        await self.get_standing_orders()
 
     async def update(self):
         """Updates the cached data for this child."""
@@ -109,3 +112,69 @@ class ChildAccount:
         self.card = Card(card_details["response"], self.user_id, self._session)
         await self.card.init_card_pin()
         return self.card
+
+    async def get_standing_orders(self) -> list[StandingOrder]:
+        """Returns a list of standing orders for the child."""
+        standing_orders = await self._session.request_handler(
+            URLS.get("get_child_standing_orders").format(
+                user_id=self.user_id
+            )
+        )
+
+        self.standing_orders = StandingOrderConverter(standing_orders)
+        return self.standing_orders
+
+    async def add_to_pot(self, value: float, target: Pot):
+        """Add money to a pot."""
+        # TODO
+        pass
+
+    async def remove_from_pot(self, value: float, target: Pot):
+        """Remove money from a pot"""
+        # TODO
+        pass
+
+    async def transfer_money(self, value: float, source: Pot, target: Pot):
+        """Transfers money between two pots."""
+        # TODO
+        pass
+
+    async def create_pot(self, new_pot: Pot):
+        """Create a new pot."""
+        # TODO
+        pass
+
+    async def delete_pot(self, pot: Pot):
+        """Delete a pot."""
+        # TODO
+        pass
+
+    async def create_standing_order(self, standing_order: StandingOrder):
+        """Create a standing order."""
+        output = await self._session.request_handler(
+            URLS.get("create_child_standing_order").format(
+                user_id=self.user_id
+            ),
+            standing_order.__dict__,
+            method="POST"
+        )
+
+        if output.get("status") == 200:
+            return True
+        else:
+            return False
+
+    async def delete_standing_order(self, standing_order: StandingOrder):
+        """Delete a standing order."""
+        output = await self._session.request_handler(
+            URLS.get("delete_child_standing_order").format(
+                user_id=self.user_id,
+                standing_order_id=standing_order.regular_id
+            ),
+            method="DELETE"
+        )
+
+        if output.get("status") == 200:
+            return True
+        else:
+            return False

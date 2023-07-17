@@ -38,6 +38,20 @@ async def _post_request(url, body: dict, auth=None, headers=None):
                 "response": json.loads(text)
             }
 
+async def _delete_request(url, body: dict, auth=None, headers=None):
+    if headers is None:
+        headers=HEADERS
+    async with aiohttp.ClientSession() as session:
+        async with session.delete(f"{BASE_URL}/{url}",
+                                json=body,
+                                headers=headers,
+                                auth=auth) as response:
+            text = await response.text()
+            return {
+                "status": response.status,
+                "response": json.loads(text)
+            }
+
 class RoosterSession:
     """The main Rooster Session."""
 
@@ -140,6 +154,8 @@ class RoosterSession:
             return await _fetch_request(url, headers=headers)
         elif method == "POST":
             return await _post_request(url, body=body, headers=headers)
+        elif method == "DELETE":
+            return await _delete_request(url, body=body, headers=headers)
         else:
             raise ValueError("Invalid type argument.")
 

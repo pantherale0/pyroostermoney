@@ -33,7 +33,10 @@ URLS = {
     "create_payment": "api/parent/acquirer/create-payment",
     "get_child_card_details": "api/parent/child/{user_id}/card/details",
     "get_child_card_pin": "api/parent/child/{user_id}/cards/{card_id}/pin",
-    "get_family_account_cards": "api/parent/family/cards"
+    "get_family_account_cards": "api/parent/family/cards",
+    "get_child_standing_orders": "api/parent/child/{user_id}/standingorder",
+    "create_child_standing_order": "api/parent/child/{user_id}/standingorder/",
+    "delete_child_standing_order": "api/parent/child/{user_id}/standingorder/{delete_child_standing_order}"
 }
 
 HEADERS = {
