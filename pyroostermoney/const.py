@@ -1,7 +1,7 @@
 # pylint: disable=line-too-long
 """Static Rooster Money variables"""
 
-VERSION="0.1.7"
+VERSION="0.2.0"
 BASE_URL="https://api.rooster.money"
 LANGUAGE="en-GB"
 COUNTRY="gb"
@@ -42,7 +42,8 @@ URLS = {
 
 HEADERS = {
     "content-type": "application/json",
-    "accept": "application/json"
+    "accept": "application/json",
+    "user-agent": f"Mozilla/5.0 Rooster Money {MOBILE_APP_VERSION}"
 }
 
 LOGIN_BODY={
