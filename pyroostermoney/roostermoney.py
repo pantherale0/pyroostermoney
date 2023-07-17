@@ -1,6 +1,7 @@
 """The RoosterMoney integration."""
 
-import logging
+import logging, asyncio
+from datetime import datetime, timedelta
 
 from .const import URLS
 from .child import ChildAccount
@@ -12,23 +13,56 @@ _LOGGER = logging.getLogger(__name__)
 class RoosterMoney(RoosterSession):
     """The RoosterMoney module."""
 
-    def __init__(self, username: str, password: str) -> None:
+    def __init__(self, username: str, password: str, update_interval: int=30, use_updater: bool=False) -> None:
         super().__init__(
             username=username,
-            password=password
+            password=password,
+            use_updater=use_updater,
+            update_interval=update_interval
         )
         self.account_info = None
+        self.children: list[ChildAccount] = []
+        self._discovered_children: list = []
+        self.family_account: FamilyAccount = None
+        self._update_lock = asyncio.Lock()
+
+    async def async_login(self):
+        await super().async_login()
+        await self.update()
+        await self.get_family_account()
+        if self.use_updater:
+            _LOGGER.debug("Using built-in updater for RoosterMoney")
+            asyncio.create_task(self._update_scheduler())
+
+    async def _update_scheduler(self):
+        """Automatic updater"""
+        while True:
+            next_time = datetime.now() + timedelta(seconds=self.update_interval)
+            while datetime.now() < next_time:
+                await asyncio.sleep(1)
+            _LOGGER.info("Updating data")
+            await self.update()
+
+    async def update(self):
+        """Perform an update of all root types"""
+        if self._update_lock.locked():
+            return True
+
+        async with self._update_lock:
+            await self.get_children()
 
     async def get_children(self) -> list[ChildAccount]:
         """Returns a list of available children."""
         account_info = await self.get_account_info()
         children = account_info["children"]
-        output = []
         for child in children:
-            child = ChildAccount(child, self)
-            await child.perform_init() # calling this will init some extra props.
-            output.append(child)
-        return output
+            if child.get("userId") not in self._discovered_children:
+                child = ChildAccount(child, self)
+                await child.perform_init() # calling this will init some extra props.
+                self._discovered_children.append(child.user_id)
+                self.children.append(child)
+        _LOGGER.debug(self._discovered_children)
+        return self.children
 
     async def get_account_info(self) -> dict:
         """Returns the account info for the current user."""
@@ -38,13 +72,7 @@ class RoosterMoney(RoosterSession):
 
     async def get_child_account(self, user_id) -> ChildAccount:
         """Fetches and returns a given child account details."""
-        response = await self.request_handler(
-            url=URLS.get("get_child").format(user_id=user_id))
-
-        child = ChildAccount(response, self)
-        await child.perform_init()
-
-        return child
+        return [x for x in self.children if x.user_id == user_id][0]
 
     async def get_master_job_list(self):
         """Gets master job list (/parent/master-jobs)"""
@@ -60,4 +88,5 @@ class RoosterMoney(RoosterSession):
             url=URLS.get("get_family_account")
         )
         account = await self.get_account_info()
-        return FamilyAccount(response["response"], account, self)
+        self.family_account =  FamilyAccount(response["response"], account, self)
+        return self.family_account

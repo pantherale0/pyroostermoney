@@ -55,13 +55,15 @@ async def _delete_request(url, body: dict, auth=None, headers=None):
 class RoosterSession:
     """The main Rooster Session."""
 
-    def __init__(self, username: str, password: str) -> None:
+    def __init__(self, username: str, password: str, update_interval: int=30, use_updater: bool=False) -> None:
         self._username = username
         self._password = password
         self._session = None
         self._headers = HEADERS
         self._logged_in = False
         self._logging_in = asyncio.Lock()
+        self.update_interval = update_interval
+        self.use_updater = use_updater
 
     async def async_login(self):
         """Logs into RoosterMoney and starts a new active session."""
@@ -168,6 +170,7 @@ class RoosterSession:
                                         login_request=False,
                                         add_security_token=False):
         """Public calls for the private _internal_request_handler."""
+        _LOGGER.debug(f"Sending {method} HTTP request to {url}")
         try:
             return await self._internal_request_handler(
                 url=url,
@@ -193,8 +196,8 @@ class RoosterSession:
         except aiohttp.ClientOSError as exc:
             # silent exc handler
             if exc.errno == 104: # connection reset by peer
-                asyncio.sleep(5)
                 _LOGGER.debug("Connection reset by peer - retrying request.")
+                asyncio.sleep(5)
                 await self.request_handler(**locals())
             else:
                 raise aiohttp.ClientOSError from exc

@@ -1,7 +1,7 @@
 """Defines some standard values for a Natwest Rooster Money child."""
 
-import asyncio
-import datetime
+import asyncio, logging
+from datetime import datetime, timedelta, date
 
 from pyroostermoney.const import URLS
 from pyroostermoney.api import RoosterSession
@@ -9,6 +9,8 @@ from .money_pot import Pot, convert_response as MoneyPotConverter
 from .card import Card
 from .standing_order import StandingOrder, convert_response as StandingOrderConverter
 from .jobs import Job
+
+_LOGGER = logging.getLogger(__name__)
 
 class ChildAccount:
     """The child account."""
@@ -22,9 +24,32 @@ class ChildAccount:
         self.jobs: list[Job] = []
         self.active_allowance_period_id: int = None
         self._exclude_card = False
+        self._update_lock = asyncio.Lock()
+        if self._session.use_updater:
+            _LOGGER.debug("Using auto updater for ChildAccount")
+            self._updater = asyncio.create_task(self._update_scheduler())
+        self.last_updated = datetime.now()
+
+    def __eq__(self, obj):
+        if not isinstance(obj, ChildAccount):
+            return NotImplemented
+
+        return (self.available_pocket_money == obj.available_pocket_money
+        ) and (self.jobs == obj.jobs) and (self.pots == obj.pots) and (
+            self.active_allowance_period_id == obj.active_allowance_period_id
+        )
+
+    async def _update_scheduler(self):
+        """Async auto update loop."""
+        while True:
+            next_time = datetime.now() + timedelta(seconds=self._session.update_interval)
+            while datetime.now() < next_time:
+                await asyncio.sleep(1)
+            await self.update()
 
     async def perform_init(self):
         """Performs init for some internal async props."""
+        _LOGGER.debug("Performing init for ChildAccount")
         await self.get_pocket_money()
         if not self._exclude_card:
             await self.get_card_details()
@@ -35,10 +60,16 @@ class ChildAccount:
 
     async def update(self):
         """Updates the cached data for this child."""
-        response = await self._session.request_handler(
-            url=URLS.get("get_child").format(user_id=self.user_id))
-        self._parse_response(response)
-        await self.perform_init()
+        _LOGGER.debug("Update ChildAccount")
+        if self._update_lock.locked():
+            return True
+
+        async with self._update_lock:
+            response = await self._session.request_handler(
+                url=URLS.get("get_child").format(user_id=self.user_id))
+            self._parse_response(response)
+            await self.perform_init()
+            self.last_updated = datetime.now()
 
     def _parse_response(self, raw_response:dict):
         """Parses the raw_response into this object"""
@@ -60,9 +91,9 @@ class ChildAccount:
             url=URLS.get("get_child_allowance_periods").format(user_id=self.user_id))
         allowance_periods = allowance_periods["response"]
         active_periods = [p for p in allowance_periods
-                          if datetime.datetime.strptime(p["startDate"], "%Y-%m-%d").date() <=
-                          datetime.date.today() <=
-                          datetime.datetime.strptime(p["endDate"], "%Y-%m-%d").date()]
+                          if datetime.strptime(p["startDate"], "%Y-%m-%d").date() <=
+                          date.today() <=
+                          datetime.strptime(p["endDate"], "%Y-%m-%d").date()]
         if len(active_periods) != 1:
             raise LookupError("No allowance period found")
 
@@ -141,30 +172,30 @@ class ChildAccount:
         self.standing_orders = StandingOrderConverter(standing_orders)
         return self.standing_orders
 
-    async def add_to_pot(self, value: float, target: Pot):
+    async def add_to_pot(self, value: float, target: Pot) -> Pot:
         """Add money to a pot."""
         # TODO
         pass
 
-    async def remove_from_pot(self, value: float, target: Pot):
+    async def remove_from_pot(self, value: float, target: Pot) -> Pot:
         """Remove money from a pot"""
         # TODO
         pass
 
-    async def transfer_money(self, value: float, source: Pot, target: Pot):
+    async def transfer_money(self, value: float, source: Pot, target: Pot) -> Pot:
         """Transfers money between two pots."""
         # TODO
         pass
 
-    async def create_pot(self, new_pot: Pot):
+    async def create_pot(self, new_pot: Pot) -> Pot:
         """Create a new pot."""
         # TODO
         pass
 
-    async def delete_pot(self, pot: Pot):
+    async def delete_pot(self, pot: Pot) -> bool:
         """Delete a pot."""
         # TODO
-        pass
+        return True
 
     async def create_standing_order(self, standing_order: StandingOrder):
         """Create a standing order."""

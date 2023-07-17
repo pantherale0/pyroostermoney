@@ -1,18 +1,36 @@
 # pylint: disable=fixme
 """Defines the class for the family account."""
 
+import asyncio, logging
+from datetime import datetime, timedelta
+
 from .api import RoosterSession
 from .const import URLS, DEFAULT_BANK_NAME, DEFAULT_BANK_TYPE, CREATE_PAYMENT_BODY, CURRENCY
+
+_LOGGER = logging.getLogger(__name__)
 
 class FamilyAccount:
     """A family account."""
 
-    def __init__(self, raw_response: dict, account_info: dict, session: RoosterSession) -> None:
+    def __init__(self,
+                 raw_response: dict,
+                 account_info: dict,
+                 session: RoosterSession) -> None:
         self._session = session
         self._parse_response(raw_response, account_info)
+        self._update_lock = asyncio.Lock()
+        if self._session.use_updater:
+            _LOGGER.debug("Using auto updater for FamilyAccount")
+            self._updater = asyncio.create_task(self._update_scheduler())
+        self.last_updated = datetime.now()
+
+    def __del__(self):
+        self._updater.cancel()
+        self._updater = None
 
     def _parse_response(self, raw_response: dict, account_info: dict):
         """Parses the raw response."""
+        _LOGGER.debug("Parsing new response")
         if "response" in raw_response:
             raw_response = raw_response["response"]
 
@@ -26,14 +44,28 @@ class FamilyAccount:
         if self.balance is not None:
             self.balance = float(self.balance)
 
+    async def _update_scheduler(self):
+        """Automatic updates according to the update interval."""
+        while True:
+            next_time = datetime.now() + timedelta(seconds=self._session.update_interval)
+            while datetime.now() < next_time:
+                await asyncio.sleep(1)
+            _LOGGER.info("Updating data.")
+            await self.update()
+
     async def update(self):
         """Updates the FamilyAccount object data."""
-        family_account = await self._session.request_handler(
-            url=URLS.get("get_family_account"))
-        account = await self._session.request_handler(
-            url=URLS.get("get_account_info")
-        )
-        self._parse_response(raw_response=family_account, account_info=account)
+        if self._update_lock.locked():
+            return True
+
+        async with self._update_lock:
+            family_account = await self._session.request_handler(
+                url=URLS.get("get_family_account"))
+            account = await self._session.request_handler(
+                url=URLS.get("get_account_info")
+            )
+            self._parse_response(raw_response=family_account, account_info=account)
+            self.last_updated = datetime.now()
 
     @property
     def bank_transfer_details(self):
