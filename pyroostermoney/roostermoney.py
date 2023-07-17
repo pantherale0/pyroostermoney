@@ -72,7 +72,7 @@ class RoosterMoney(RoosterSession):
         self.account_info = self.account_info["response"]
         return self.account_info
 
-    async def get_child_account(self, user_id) -> ChildAccount:
+    def get_child_account(self, user_id) -> ChildAccount:
         """Fetches and returns a given child account details."""
         return [x for x in self.children if x.user_id == user_id][0]
 
