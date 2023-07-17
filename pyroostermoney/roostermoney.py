@@ -4,7 +4,7 @@ import logging, asyncio
 from datetime import datetime, timedelta
 
 from .const import URLS
-from .child import ChildAccount
+from .child import ChildAccount, Job
 from .family_account import FamilyAccount
 from .api import RoosterSession
 
@@ -22,6 +22,7 @@ class RoosterMoney(RoosterSession):
         )
         self.account_info = None
         self.children: list[ChildAccount] = []
+        self.master_job_list: list[Job] = []
         self._discovered_children: list = []
         self.family_account: FamilyAccount = None
         self._update_lock = asyncio.Lock()
@@ -50,6 +51,7 @@ class RoosterMoney(RoosterSession):
 
         async with self._update_lock:
             await self.get_children()
+            await self.get_master_job_list()
 
     async def get_children(self) -> list[ChildAccount]:
         """Returns a list of available children."""
@@ -74,13 +76,15 @@ class RoosterMoney(RoosterSession):
         """Fetches and returns a given child account details."""
         return [x for x in self.children if x.user_id == user_id][0]
 
-    async def get_master_job_list(self):
+    async def get_master_job_list(self) -> list[Job]:
         """Gets master job list (/parent/master-jobs)"""
         response = await self.request_handler(
             url=URLS.get("get_master_job_list")
         )
-
-        return response
+        jobs = Job.convert_response(response.get("response"), self)
+        for job in jobs:
+            self.master_job_list.append(job)
+        return self.master_job_list
 
     async def get_family_account(self) -> FamilyAccount:
         """Gets family account details (/parent/family/account)"""

@@ -36,7 +36,8 @@ URLS = {
     "get_family_account_cards": "api/parent/family/cards",
     "get_child_standing_orders": "api/parent/child/{user_id}/standingorder",
     "create_child_standing_order": "api/parent/child/{user_id}/standingorder/",
-    "delete_child_standing_order": "api/parent/child/{user_id}/standingorder/{delete_child_standing_order}"
+    "delete_child_standing_order": "api/parent/child/{user_id}/standingorder/{delete_child_standing_order}",
+    "get_master_job_list": "api/parent/master-jobs"
 }
 
 HEADERS = {

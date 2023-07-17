@@ -49,7 +49,6 @@ class ChildAccount:
 
     async def perform_init(self):
         """Performs init for some internal async props."""
-        _LOGGER.debug("Performing init for ChildAccount")
         await self.get_pocket_money()
         if not self._exclude_card:
             await self.get_card_details()
@@ -135,7 +134,7 @@ class ChildAccount:
         response = await self._session.request_handler(url)
         self.pots: list[Pot] = MoneyPotConverter(response["response"])
 
-        return response["response"]
+        return self.pots
 
     async def special_get_pocket_money(self):
         """Same as get_pocket_money yet parses the response and provides a basic dict."""

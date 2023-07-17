@@ -4,9 +4,11 @@ from datetime import datetime
 from enum import Enum
 
 from pyroostermoney.api import RoosterSession
+from pyroostermoney.const import CURRENCY
 
 class JobState(Enum):
     """Job states."""
+    POOL = 0
     TODO = 1
     SKIPPED = 2
     PAUSED = 3
@@ -40,7 +42,8 @@ class Job:
                  time_of_day,
                  title,
                  job_type,
-                 session):
+                 session,
+                 user_id_list: list | None=None):
         self.allowance_period_id: int = allowance_period_id
         self.currency: str = currency
         self.description: str = description
@@ -59,29 +62,36 @@ class Job:
         self.title: str = title
         self.type: int = job_type
         self._session: RoosterSession = session
+        if user_id_list is not None:
+            self.user_id_list = user_id_list
 
     @staticmethod
     def from_dict(obj: dict, session) -> 'Job':
         """Converts to a job from a dict."""
+        if "dueDate" in obj:
+            _due_date = datetime.strptime(obj.get("dueDate"), "%Y-%m-%d")
+        else:
+            _due_date = None
         return Job(
-            allowance_period_id=int(obj.get("allowancePeriodId")),
-            currency=str(obj.get("currency")),
-            description=str(obj.get("description")),
-            due_any_day=bool(obj.get("dueAnyDay")),
-            due_date=datetime.strptime(obj.get("dueDate"), "%Y-%m-%d"),
-            expiry_processed=bool(obj.get("expiryProcessed")),
-            final_reward_amount=float(obj.get("finalRewardAmount")),
-            image_url=str(obj.get("imageUrl")),
-            locked=bool(obj.get("locked")),
-            master_job_id=int(obj.get("masterJobId")),
-            reopened=bool(obj.get("reopened")),
-            reward_amount=float(obj.get("rewardAmount")),
-            scheduled_job_id=int(obj.get("scheduledJobId")),
-            state=JobState(obj.get("state")),
-            time_of_day=int(obj.get("timeOfDay")),
-            title=str(obj.get("title")),
-            job_type=int(obj.get("type")),
-            session=session
+            allowance_period_id=int(obj.get("allowancePeriodId", -1)),
+            currency=str(obj.get("currency", CURRENCY)),
+            description=str(obj.get("description", "")),
+            due_any_day=bool(obj.get("dueAnyDay", False)),
+            due_date=_due_date,
+            expiry_processed=bool(obj.get("expiryProcessed", False)),
+            final_reward_amount=float(obj.get("finalRewardAmount", 0)),
+            image_url=str(obj.get("imageUrl", "")),
+            locked=bool(obj.get("locked", False)),
+            master_job_id=int(obj.get("masterJobId", 0)),
+            reopened=bool(obj.get("reopened", False)),
+            reward_amount=float(obj.get("rewardAmount", 0)),
+            scheduled_job_id=int(obj.get("scheduledJobId", 0)),
+            state=JobState(obj.get("state", 0)),
+            time_of_day=int(obj.get("timeOfDay", 0)),
+            title=str(obj.get("title", "")),
+            job_type=int(obj.get("type", 0)),
+            session=session,
+            user_id_list=obj.get("childUserIds", None)
         )
 
     @staticmethod
