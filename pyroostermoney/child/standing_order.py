@@ -32,7 +32,7 @@ def convert_response(raw_response: str) -> list[StandingOrder]:
     """Parses a raw response of standing orders into a list of StandingOrder"""
     output: list[StandingOrder] = []
     if "response" in raw_response:
-        raw_response = raw_response["raw_response"]
+        raw_response = raw_response["response"]
 
     for regular in raw_response:
         standing_order = StandingOrder(

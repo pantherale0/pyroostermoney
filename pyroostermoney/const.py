@@ -27,7 +27,7 @@ URLS = {
     "get_available_cards": "api/parent/acquirer/cards",
     "get_family_account": "api/parent/family/account",
     "get_child_pocket_money": "api/parent/child/{user_id}/pocketmoney",
-    "get_child_allowance_period_jobs": "api/parent/child/{user_id}/allowance-periods/{allowance_period_id}",
+    "get_child_allowance_period_jobs": "api/parent/child/{user_id}/allowance-periods/{allowance_period_id}/jobs",
     "get_master_jobs": "api/parent/master-jobs",
     "get_child_spend_history": "api/parent/child/{user_id}/spendHistory?count={count}",
     "create_payment": "api/parent/acquirer/create-payment",

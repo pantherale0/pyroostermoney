@@ -8,6 +8,7 @@ from pyroostermoney.api import RoosterSession
 from .money_pot import Pot, convert_response as MoneyPotConverter
 from .card import Card
 from .standing_order import StandingOrder, convert_response as StandingOrderConverter
+from .jobs import Job
 
 class ChildAccount:
     """The child account."""
@@ -18,19 +19,26 @@ class ChildAccount:
         self.pots: list[Pot] = []
         self.card: Card = None
         self.standing_orders: list[StandingOrder] = []
+        self.jobs: list[Job] = []
+        self.active_allowance_period_id: int = None
+        self._exclude_card = False
 
     async def perform_init(self):
         """Performs init for some internal async props."""
         await self.get_pocket_money()
-        await self.get_card_details()
+        if not self._exclude_card:
+            await self.get_card_details()
+            self._exclude_card=True
         await self.get_standing_orders()
+        await self.get_active_allowance_period()
+        await self.get_current_jobs()
 
     async def update(self):
         """Updates the cached data for this child."""
         response = await self._session.request_handler(
             url=URLS.get("get_child").format(user_id=self.user_id))
         self._parse_response(response)
-        await self.get_pocket_money()
+        await self.perform_init()
 
     def _parse_response(self, raw_response:dict):
         """Parses the raw_response into this object"""
@@ -57,7 +65,11 @@ class ChildAccount:
                           datetime.datetime.strptime(p["endDate"], "%Y-%m-%d").date()]
         if len(active_periods) != 1:
             raise LookupError("No allowance period found")
-        return active_periods[0]
+
+        active_periods = active_periods[0]
+        self.active_allowance_period_id = int(active_periods.get("allowancePeriodId"))
+
+        return active_periods
 
     async def get_spend_history(self, count=10):
         """Gets the spend history"""
@@ -69,6 +81,11 @@ class ChildAccount:
 
         return response["response"]
 
+    async def get_current_jobs(self) -> list[Job]:
+        """Gets jobs for the current allowance period."""
+        self.jobs = await self.get_allowance_period_jobs(self.active_allowance_period_id)
+        return self.jobs
+
     async def get_allowance_period_jobs(self, allowance_period_id):
         """Gets jobs for a given allowance period"""
         url = URLS.get("get_child_allowance_period_jobs").format(
@@ -77,7 +94,7 @@ class ChildAccount:
         )
         response = await self._session.request_handler(url)
 
-        return response["response"]
+        return Job.convert_response(response, self._session)
 
     async def get_pocket_money(self):
         """Gets pocket money"""
