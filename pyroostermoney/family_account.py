@@ -25,8 +25,9 @@ class FamilyAccount:
         self.last_updated = datetime.now()
 
     def __del__(self):
-        self._updater.cancel()
-        self._updater = None
+        if self._session.use_updater:
+            self._updater.cancel()
+            self._updater = None
 
     def _parse_response(self, raw_response: dict, account_info: dict):
         """Parses the raw response."""

@@ -26,6 +26,12 @@ class RoosterMoney(RoosterSession):
         self._discovered_children: list = []
         self.family_account: FamilyAccount = None
         self._update_lock = asyncio.Lock()
+        self._updater = None
+
+    def __del__(self):
+        if self.use_updater:
+            self._updater.cancel()
+            self._updater = None
 
     async def async_login(self):
         await super().async_login()
@@ -33,7 +39,7 @@ class RoosterMoney(RoosterSession):
         await self.get_family_account()
         if self.use_updater:
             _LOGGER.debug("Using built-in updater for RoosterMoney")
-            asyncio.create_task(self._update_scheduler())
+            self._updater = asyncio.create_task(self._update_scheduler())
 
     async def _update_scheduler(self):
         """Automatic updater"""

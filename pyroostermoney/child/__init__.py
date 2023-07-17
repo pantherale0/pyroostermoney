@@ -33,6 +33,11 @@ class ChildAccount:
             self._updater = asyncio.create_task(self._update_scheduler())
         self.last_updated = datetime.now()
 
+    def __del__(self):
+        if self._session.use_updater:
+            self._updater.cancel()
+            self._updater = None
+
     def __eq__(self, obj):
         if not isinstance(obj, ChildAccount):
             return NotImplemented
