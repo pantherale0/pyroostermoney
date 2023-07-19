@@ -10,6 +10,7 @@ import aiohttp
 
 from .const import HEADERS, BASE_URL, LOGIN_BODY, URLS
 from .exceptions import InvalidAuthError, NotLoggedIn, AuthenticationExpired
+from .events import Events
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -55,13 +56,18 @@ async def _delete_request(url, body: dict, auth=None, headers=None):
 class RoosterSession:
     """The main Rooster Session."""
 
-    def __init__(self, username: str, password: str, update_interval: int=30, use_updater: bool=False) -> None:
+    def __init__(self,
+                 username: str,
+                 password: str,
+                 update_interval: int=30,
+                 use_updater: bool=False) -> None:
         self._username = username
         self._password = password
         self._session = None
         self._headers = HEADERS
         self._logged_in = False
         self._logging_in = asyncio.Lock()
+        self.events = Events()
         self.update_interval = update_interval
         self.use_updater = use_updater
 

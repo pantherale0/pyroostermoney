@@ -13,7 +13,7 @@ _LOGGER = logging.getLogger(__name__)
 class RoosterMoney(RoosterSession):
     """The RoosterMoney module."""
 
-    def __init__(self, username: str, password: str, update_interval: int=30, use_updater: bool=False) -> None:
+    def __init__(self, username: str, password: str, update_interval: int=30, use_updater: bool=False, remove_card_information = False) -> None:
         super().__init__(
             username=username,
             password=password,
@@ -27,6 +27,7 @@ class RoosterMoney(RoosterSession):
         self.family_account: FamilyAccount = None
         self._update_lock = asyncio.Lock()
         self._updater = None
+        self._remove_card_information = remove_card_information
 
     def __del__(self):
         if self.use_updater:
@@ -65,7 +66,7 @@ class RoosterMoney(RoosterSession):
         children = account_info["children"]
         for child in children:
             if child.get("userId") not in self._discovered_children:
-                child = ChildAccount(child, self)
+                child = ChildAccount(child, self, self._remove_card_information)
                 await child.perform_init() # calling this will init some extra props.
                 self._discovered_children.append(child.user_id)
                 self.children.append(child)

@@ -1,11 +1,13 @@
 # pylint: disable=fixme
 """Defines the class for the family account."""
 
-import asyncio, logging
+import asyncio
+import logging
 from datetime import datetime, timedelta
 
 from .api import RoosterSession
 from .const import URLS, DEFAULT_BANK_NAME, DEFAULT_BANK_TYPE, CREATE_PAYMENT_BODY, CURRENCY
+from .events import EventType, EventSource
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,6 +69,10 @@ class FamilyAccount:
             )
             self._parse_response(raw_response=family_account, account_info=account)
             self.last_updated = datetime.now()
+            self._session.events.fire_event(EventSource.FAMILY_ACCOUNT, EventType.UPDATED,
+                                            {
+                                                "user_id": self.account_number
+                                            })
 
     @property
     def bank_transfer_details(self):

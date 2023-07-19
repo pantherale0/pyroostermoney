@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, date
 
 from pyroostermoney.const import URLS
 from pyroostermoney.api import RoosterSession
+from pyroostermoney.events import EventSource, EventType
 from .money_pot import Pot, convert_response as MoneyPotConverter
 from .card import Card
 from .standing_order import StandingOrder, convert_response as StandingOrderConverter
@@ -16,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 class ChildAccount:
     """The child account."""
 
-    def __init__(self, raw_response: dict, session: RoosterSession) -> None:
+    def __init__(self, raw_response: dict, session: RoosterSession, exclude_card = False) -> None:
         self._parse_response(raw_response)
         self._session = session
         self.pots: list[Pot] = []
@@ -26,7 +27,7 @@ class ChildAccount:
         self.active_allowance_period_id: int = None
         self.transactions: list[Transaction] = []
         self.latest_transaction: Transaction = None
-        self._exclude_card = False
+        self._exclude_card = exclude_card
         self._update_lock = asyncio.Lock()
         if self._session.use_updater:
             _LOGGER.debug("Using auto updater for ChildAccount")
@@ -78,6 +79,10 @@ class ChildAccount:
             self._parse_response(response)
             await self.perform_init()
             self.last_updated = datetime.now()
+            self._session.events.fire_event(EventSource.CHILD, EventType.UPDATED,
+                                            {
+                                                "user_id": self.user_id
+                                            })
 
     def _parse_response(self, raw_response:dict):
         """Parses the raw_response into this object"""
