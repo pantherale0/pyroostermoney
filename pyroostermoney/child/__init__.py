@@ -1,7 +1,7 @@
 """Defines some standard values for a Natwest Rooster Money child."""
 
-import asyncio, logging
-from datetime import datetime, timedelta, date
+import logging
+from datetime import datetime, date
 
 from pyroostermoney.const import URLS
 from pyroostermoney.api import RoosterSession
@@ -189,27 +189,22 @@ class ChildAccount:
     async def add_to_pot(self, value: float, target: Pot) -> Pot:
         """Add money to a pot."""
         # TODO
-        pass
 
     async def remove_from_pot(self, value: float, target: Pot) -> Pot:
         """Remove money from a pot"""
         # TODO
-        pass
 
     async def transfer_money(self, value: float, source: Pot, target: Pot) -> Pot:
         """Transfers money between two pots."""
         # TODO
-        pass
 
     async def create_pot(self, new_pot: Pot) -> Pot:
         """Create a new pot."""
         # TODO
-        pass
 
     async def delete_pot(self, pot: Pot) -> bool:
         """Delete a pot."""
         # TODO
-        return True
 
     async def create_standing_order(self, standing_order: StandingOrder):
         """Create a standing order."""

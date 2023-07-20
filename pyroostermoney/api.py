@@ -176,7 +176,7 @@ class RoosterSession:
                                         login_request=False,
                                         add_security_token=False):
         """Public calls for the private _internal_request_handler."""
-        _LOGGER.debug(f"Sending {method} HTTP request to {url}")
+        _LOGGER.debug("Sending %s HTTP request to %s", method, url)
         try:
             return await self._internal_request_handler(
                 url=url,

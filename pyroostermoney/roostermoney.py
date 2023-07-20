@@ -1,6 +1,7 @@
 """The RoosterMoney integration."""
 
-import logging, asyncio
+import logging
+import asyncio
 from datetime import datetime, timedelta
 
 from .const import URLS

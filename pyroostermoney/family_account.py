@@ -3,7 +3,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from .api import RoosterSession
 from .const import URLS, DEFAULT_BANK_NAME, DEFAULT_BANK_TYPE, CREATE_PAYMENT_BODY, CURRENCY
