@@ -20,7 +20,7 @@ class EventSource(Enum):
     FAMILY_ACCOUNT = 2
     JOBS = 4
     TRANSACTIONS = 8
-    # TODO STANDING_ORDER = 16
+    STANDING_ORDER = 16
 
     def __str__(self) -> str:
         return self.name

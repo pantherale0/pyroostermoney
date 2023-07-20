@@ -182,8 +182,16 @@ class ChildAccount:
                 user_id=self.user_id
             )
         )
-
+        p_standing_orders = self.standing_orders
         self.standing_orders = StandingOrderConverter(standing_orders)
+        if (len(p_standing_orders)>0 and
+            p_standing_orders[len(p_standing_orders)-1].regular_id is not
+            self.standing_orders[len(self.standing_orders)-1].regular_id):
+            self._session.events.fire_event(EventSource.STANDING_ORDER, EventType.UPDATED, {
+                "new_regular_id": self.standing_orders[len(self.standing_orders)-1].regular_id,
+                "old_regular_id": p_standing_orders[len(p_standing_orders)-1].regular_id
+            })
+
         return self.standing_orders
 
     async def add_to_pot(self, value: float, target: Pot) -> Pot:
