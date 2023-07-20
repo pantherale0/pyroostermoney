@@ -194,25 +194,20 @@ class ChildAccount:
 
         return self.standing_orders
 
-    async def add_to_pot(self, value: float, target: Pot) -> Pot:
-        """Add money to a pot."""
-        # TODO
+    # async def add_to_pot(self, value: float, target: Pot) -> Pot:
+    #     """Add money to a pot."""
 
-    async def remove_from_pot(self, value: float, target: Pot) -> Pot:
-        """Remove money from a pot"""
-        # TODO
+    # async def remove_from_pot(self, value: float, target: Pot) -> Pot:
+    #     """Remove money from a pot"""
 
-    async def transfer_money(self, value: float, source: Pot, target: Pot) -> Pot:
-        """Transfers money between two pots."""
-        # TODO
+    # async def transfer_money(self, value: float, source: Pot, target: Pot) -> Pot:
+    #     """Transfers money between two pots."""
 
-    async def create_pot(self, new_pot: Pot) -> Pot:
-        """Create a new pot."""
-        # TODO
+    # async def create_pot(self, new_pot: Pot) -> Pot:
+    #     """Create a new pot."""
 
-    async def delete_pot(self, pot: Pot) -> bool:
-        """Delete a pot."""
-        # TODO
+    # async def delete_pot(self, pot: Pot) -> bool:
+    #     """Delete a pot."""
 
     async def create_standing_order(self, standing_order: StandingOrder):
         """Create a standing order."""
