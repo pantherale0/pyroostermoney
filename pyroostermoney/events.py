@@ -4,6 +4,7 @@ from enum import Enum
 from typing import Any
 
 class EventType(Enum):
+    """Valid event types"""
     UPDATED = 1
     CREATED = 2
     DELETED = 4
@@ -13,13 +14,14 @@ class EventType(Enum):
         return self.name
 
 class EventSource(Enum):
+    """Valid event sources"""
     ALL = 0
     CHILD = 1
     FAMILY_ACCOUNT = 2
     JOBS = 4
     TRANSACTIONS = 8
-    STANDING_ORDER = 16
-    CARD = 32
+    # TODO STANDING_ORDER = 16
+    # TODO CARD = 32
 
     def __str__(self) -> str:
         return self.name

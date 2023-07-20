@@ -28,16 +28,12 @@ class ChildAccount:
         self.transactions: list[Transaction] = []
         self.latest_transaction: Transaction = None
         self._exclude_card = exclude_card
-        self._update_lock = asyncio.Lock()
-        if self._session.use_updater:
-            _LOGGER.debug("Using auto updater for ChildAccount")
-            self._updater = asyncio.create_task(self._update_scheduler())
-        self.last_updated = datetime.now()
 
     def __del__(self):
-        if self._session.use_updater:
-            self._updater.cancel()
-            self._updater = None
+        pass
+        # if self._session.use_updater:
+        #     self._updater.cancel()
+        #     self._updater = None
 
     def __eq__(self, obj):
         if not isinstance(obj, ChildAccount):
@@ -47,14 +43,6 @@ class ChildAccount:
         ) and (self.jobs == obj.jobs) and (self.pots == obj.pots) and (
             self.active_allowance_period_id == obj.active_allowance_period_id
         )
-
-    async def _update_scheduler(self):
-        """Async auto update loop."""
-        while True:
-            next_time = datetime.now() + timedelta(seconds=self._session.update_interval)
-            while datetime.now() < next_time:
-                await asyncio.sleep(1)
-            await self.update()
 
     async def perform_init(self):
         """Performs init for some internal async props."""
@@ -69,16 +57,15 @@ class ChildAccount:
 
     async def update(self):
         """Updates the cached data for this child."""
+        p_self = self
         _LOGGER.debug("Update ChildAccount")
-        if self._update_lock.locked():
-            return True
-
-        async with self._update_lock:
-            response = await self._session.request_handler(
-                url=URLS.get("get_child").format(user_id=self.user_id))
-            self._parse_response(response)
-            await self.perform_init()
-            self.last_updated = datetime.now()
+        response = await self._session.request_handler(
+            url=URLS.get("get_child").format(user_id=self.user_id))
+        self._parse_response(response)
+        await self.perform_init()
+        if (p_self is not None and
+            p_self.active_allowance_period_id != self.active_allowance_period_id or
+            p_self.available_pocket_money != self.available_pocket_money):
             self._session.events.fire_event(EventSource.CHILD, EventType.UPDATED,
                                             {
                                                 "user_id": self.user_id
@@ -123,12 +110,25 @@ class ChildAccount:
         )
         response = await self._session.request_handler(url=url)
         self.transactions = Transaction.parse_response(response["response"])
+        p_transaction = self.latest_transaction
         self.latest_transaction = self.transactions[len(self.transactions)-1]
+        if (p_transaction is not None
+            and self.latest_transaction.transaction_id != p_transaction.transaction_id):
+            self._session.events.fire_event(EventSource.TRANSACTIONS, EventType.UPDATED, {
+                "old_transaction_id": p_transaction.transaction_id,
+                "new_transaction_id": self.latest_transaction.transaction_id
+            })
         return self.transactions
 
     async def get_current_jobs(self) -> list[Job]:
         """Gets jobs for the current allowance period."""
+        p_jobs = self.jobs
         self.jobs = await self.get_allowance_period_jobs(self.active_allowance_period_id)
+        if (len(p_jobs) > 0 and
+            self.jobs[len(self.jobs)-1].master_job_id != p_jobs[len(p_jobs)-1].master_job_id):
+            self._session.events.fire_event(EventSource.JOBS, EventType.UPDATED, {
+                "job_length": [len(self.jobs)]
+            })
         return self.jobs
 
     async def get_allowance_period_jobs(self, allowance_period_id):

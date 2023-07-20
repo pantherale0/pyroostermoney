@@ -21,15 +21,7 @@ class FamilyAccount:
         self._session = session
         self._parse_response(raw_response, account_info)
         self._update_lock = asyncio.Lock()
-        if self._session.use_updater:
-            _LOGGER.debug("Using auto updater for FamilyAccount")
-            self._updater = asyncio.create_task(self._update_scheduler())
         self.last_updated = datetime.now()
-
-    def __del__(self):
-        if self._session.use_updater:
-            self._updater.cancel()
-            self._updater = None
 
     def _parse_response(self, raw_response: dict, account_info: dict):
         """Parses the raw response."""
@@ -47,15 +39,6 @@ class FamilyAccount:
         if self.balance is not None:
             self.balance = float(self.balance)
 
-    async def _update_scheduler(self):
-        """Automatic updates according to the update interval."""
-        while True:
-            next_time = datetime.now() + timedelta(seconds=self._session.update_interval)
-            while datetime.now() < next_time:
-                await asyncio.sleep(1)
-            _LOGGER.info("Updating data.")
-            await self.update()
-
     async def update(self):
         """Updates the FamilyAccount object data."""
         if self._update_lock.locked():
@@ -67,12 +50,14 @@ class FamilyAccount:
             account = await self._session.request_handler(
                 url=URLS.get("get_account_info")
             )
+            p_account = self.__dict__
             self._parse_response(raw_response=family_account, account_info=account)
             self.last_updated = datetime.now()
-            self._session.events.fire_event(EventSource.FAMILY_ACCOUNT, EventType.UPDATED,
-                                            {
-                                                "user_id": self.account_number
-                                            })
+            if p_account is not self.__dict__:
+                self._session.events.fire_event(EventSource.FAMILY_ACCOUNT, EventType.UPDATED,
+                                                {
+                                                    "user_id": self.account_number
+                                                })
 
     @property
     def bank_transfer_details(self):
