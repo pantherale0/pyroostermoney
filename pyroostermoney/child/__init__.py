@@ -171,7 +171,7 @@ class ChildAccount:
             )
         )
 
-        self.card = Card(card_details["response"], self.user_id, self._session)
+        self.card = Card.parse_response(card_details["response"], self.user_id, self._session)
         await self.card.init_card_pin()
         return self.card
 
