@@ -1,5 +1,7 @@
 """Defines a money pot."""
-
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
+# pylint: disable=too-few-public-methods
 from datetime import datetime
 
 from pyroostermoney.const import SPEND_POT_ID, SAVINGS_POT_ID, GIVE_POT_ID, GOAL_POT_ID

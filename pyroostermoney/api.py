@@ -1,5 +1,8 @@
 """Rooster Money requests and session handler."""
-
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-branches
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-instance-attributes
 import json
 import logging
 import base64
@@ -148,7 +151,8 @@ class RoosterSession:
             return await _post_request(url, body, auth, headers)
 
         # Check if auth has expired
-
+        # pylint: disable=no-else-raise
+        # pylint: disable=no-else-return
         if self._session["expiry_time"] < datetime.now():
             raise AuthenticationExpired()
 

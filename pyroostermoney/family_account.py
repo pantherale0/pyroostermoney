@@ -1,5 +1,7 @@
 # pylint: disable=fixme
 """Defines the class for the family account."""
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
 
 import asyncio
 import logging

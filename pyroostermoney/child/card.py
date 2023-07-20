@@ -1,4 +1,5 @@
 """Rooster Money card type."""
+# pylint: disable=too-many-instance-attributes
 
 from pyroostermoney.api import RoosterSession
 from pyroostermoney.const import URLS
@@ -47,3 +48,8 @@ class Card:
 
         response: dict = response["response"]
         self.pin = response.get("pin", None)
+
+    @staticmethod
+    def parse_response(raw: dict):
+        """RESPONSE PARSER"""
+        # TODO

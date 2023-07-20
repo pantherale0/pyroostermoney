@@ -1,5 +1,5 @@
 """Defines some standard values for a Natwest Rooster Money child."""
-
+# pylint: disable=too-many-instance-attributes
 import logging
 from datetime import datetime, date
 
@@ -81,7 +81,7 @@ class ChildAccount:
         self.first_name = raw_response["firstName"]
         self.surname = raw_response["surname"]
         self.gender = "male" if raw_response["gender"] == 1 else "female"
-        self.uses_real_money = True if raw_response["realMoneyStatus"] == 1 else False
+        self.uses_real_money = raw_response["realMoneyStatus"] == 1
         self.user_id = raw_response["userId"]
         self.profile_image = raw_response["profileImageUrl"]
 
@@ -219,10 +219,7 @@ class ChildAccount:
             method="POST"
         )
 
-        if output.get("status") == 200:
-            return True
-        else:
-            return False
+        return bool(output.get("status") == 200)
 
     async def delete_standing_order(self, standing_order: StandingOrder):
         """Delete a standing order."""
@@ -234,7 +231,4 @@ class ChildAccount:
             method="DELETE"
         )
 
-        if output.get("status") == 200:
-            return True
-        else:
-            return False
+        return bool(output.get("status") == 200)

@@ -1,5 +1,7 @@
 """Job type."""
-
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-locals
+# pylint: disable=too-many-arguments
 from datetime import datetime
 from enum import Enum
 

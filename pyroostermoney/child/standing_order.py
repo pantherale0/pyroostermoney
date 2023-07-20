@@ -1,4 +1,5 @@
 """A standing order."""
+# pylint: disable=too-many-arguments
 
 class StandingOrder:
     """A standing order."""
@@ -41,7 +42,7 @@ class StandingOrder:
                 day=regular.get("day"),
                 frequency=regular.get("frequency"),
                 regular_id=regular.get("id"),
-                active=True if regular.get("paused") is False else False,
+                active= bool(regular.get("paused")) is not True,
                 tag=regular.get("tag"),
                 title=regular.get("title")
             )

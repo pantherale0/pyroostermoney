@@ -1,4 +1,6 @@
 """The RoosterMoney integration."""
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
 
 import logging
 import asyncio
