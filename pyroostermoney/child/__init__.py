@@ -6,9 +6,9 @@ from datetime import datetime, date
 from pyroostermoney.const import URLS
 from pyroostermoney.api import RoosterSession
 from pyroostermoney.events import EventSource, EventType
-from .money_pot import Pot, convert_response as MoneyPotConverter
+from .money_pot import Pot
 from .card import Card
-from .standing_order import StandingOrder, convert_response as StandingOrderConverter
+from .standing_order import StandingOrder
 from .jobs import Job
 from .transaction import Transaction
 
@@ -147,7 +147,7 @@ class ChildAccount:
             user_id=self.user_id
         )
         response = await self._session.request_handler(url)
-        self.pots: list[Pot] = MoneyPotConverter(response["response"])
+        self.pots: list[Pot] = Pot.convert_response(response["response"])
 
         return self.pots
 
@@ -183,7 +183,7 @@ class ChildAccount:
             )
         )
         p_standing_orders = self.standing_orders
-        self.standing_orders = StandingOrderConverter(standing_orders)
+        self.standing_orders = StandingOrder.convert_response(standing_orders)
         if (len(p_standing_orders)>0 and
             p_standing_orders[len(p_standing_orders)-1].regular_id is not
             self.standing_orders[len(self.standing_orders)-1].regular_id):

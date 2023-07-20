@@ -25,60 +25,60 @@ class Pot:
         self.target = target
         self.last_updated = last_updated
 
+    @staticmethod
+    def convert_response(raw: dict) -> list['Pot']:
+        """Converts a raw response into a list of Pot"""
+        output: list[Pot] = []
 
-def convert_response(raw: dict) -> list[Pot]:
-    """Converts a raw response into a list of Pot"""
-    output: list[Pot] = []
+        # process the default pots first, starting with savings
+        savings = Pot(name="Savings",
+                    ledger=None,
+                    pot_id=SAVINGS_POT_ID,
+                    image=None,
+                    enabled=raw["potSettings"]["savePot"]["display"],
+                    value=raw["safeTotal"],
+                    target=raw["saveGoalAmount"])
+        output.append(savings)
 
-    # process the default pots first, starting with savings
-    savings = Pot(name="Savings",
-                  ledger=None,
-                  pot_id=SAVINGS_POT_ID,
-                  image=None,
-                  enabled=raw["potSettings"]["savePot"]["display"],
-                  value=raw["safeTotal"],
-                  target=raw["saveGoalAmount"])
-    output.append(savings)
+        # goal pot
+        goals = Pot(name="Goals",
+                    ledger=None,
+                    pot_id=GOAL_POT_ID,
+                    image=None,
+                    enabled=raw["potSettings"]["goalPot"]["display"],
+                    value=raw["allocatedToGoals"])
+        output.append(goals)
 
-    # goal pot
-    goals = Pot(name="Goals",
-                  ledger=None,
-                  pot_id=GOAL_POT_ID,
-                  image=None,
-                  enabled=raw["potSettings"]["goalPot"]["display"],
-                  value=raw["allocatedToGoals"])
-    output.append(goals)
+        # spend pot
+        goals = Pot(name="Spending",
+                    ledger=None,
+                    pot_id=SPEND_POT_ID,
+                    image=None,
+                    enabled=raw["potSettings"]["spendPot"]["display"],
+                    value=raw["walletTotal"])
+        output.append(goals)
 
-    # spend pot
-    goals = Pot(name="Spending",
-                  ledger=None,
-                  pot_id=SPEND_POT_ID,
-                  image=None,
-                  enabled=raw["potSettings"]["spendPot"]["display"],
-                  value=raw["walletTotal"])
-    output.append(goals)
+        # spend pot
+        goals = Pot(name="Give",
+                    ledger=None,
+                    pot_id=GIVE_POT_ID,
+                    image=None,
+                    enabled=raw["potSettings"]["givePot"]["display"],
+                    value=raw["giveAmount"])
+        output.append(goals)
 
-    # spend pot
-    goals = Pot(name="Give",
-                  ledger=None,
-                  pot_id=GIVE_POT_ID,
-                  image=None,
-                  enabled=raw["potSettings"]["givePot"]["display"],
-                  value=raw["giveAmount"])
-    output.append(goals)
+        # now process custom pots
+        for pot in raw["customPots"]:
+            custom_pot = Pot(
+                name=pot["customLedgerMetadata"]["title"],
+                pot_id=pot["customPotId"],
+                ledger=pot["customLedgerMetadata"],
+                image=pot["customLedgerMetadata"]["imageUrl"],
+                enabled=True, # custom pots enabled by default
+                value=pot["availableBalance"]["amount"],
+                target=pot["customLedgerMetadata"]["upperLimit"]["amount"],
+                last_updated=pot["updated"]
+            )
+            output.append(custom_pot)
 
-    # now process custom pots
-    for pot in raw["customPots"]:
-        custom_pot = Pot(
-            name=pot["customLedgerMetadata"]["title"],
-            pot_id=pot["customPotId"],
-            ledger=pot["customLedgerMetadata"],
-            image=pot["customLedgerMetadata"]["imageUrl"],
-            enabled=True, # custom pots enabled by default
-            value=pot["availableBalance"]["amount"],
-            target=pot["customLedgerMetadata"]["upperLimit"]["amount"],
-            last_updated=pot["updated"]
-        )
-        output.append(custom_pot)
-
-    return output
+        return output

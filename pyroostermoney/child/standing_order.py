@@ -28,22 +28,23 @@ class StandingOrder:
             "title": self.title
         }
 
-def convert_response(raw_response: str) -> list[StandingOrder]:
-    """Parses a raw response of standing orders into a list of StandingOrder"""
-    output: list[StandingOrder] = []
-    if "response" in raw_response:
-        raw_response = raw_response["response"]
+    @staticmethod
+    def convert_response(raw_response: str) -> list['StandingOrder']:
+        """Parses a raw response of standing orders into a list of StandingOrder"""
+        output: list[StandingOrder] = []
+        if "response" in raw_response:
+            raw_response = raw_response["response"]
 
-    for regular in raw_response:
-        standing_order = StandingOrder(
-            amount=float(regular.get("amount")),
-            day=regular.get("day"),
-            frequency=regular.get("frequency"),
-            regular_id=regular.get("id"),
-            active=True if regular.get("paused") is False else False,
-            tag=regular.get("tag"),
-            title=regular.get("title")
-        )
-        output.append(standing_order)
+        for regular in raw_response:
+            standing_order = StandingOrder(
+                amount=float(regular.get("amount")),
+                day=regular.get("day"),
+                frequency=regular.get("frequency"),
+                regular_id=regular.get("id"),
+                active=True if regular.get("paused") is False else False,
+                tag=regular.get("tag"),
+                title=regular.get("title")
+            )
+            output.append(standing_order)
 
-    return output
+        return output
