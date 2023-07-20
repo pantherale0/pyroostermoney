@@ -137,16 +137,16 @@ class RoosterSession:
 
         if self._session is None and self._logged_in:
             raise RuntimeError("Invalid state. Missing session data yet currently logged in?")
-        elif self._session is None and self._logged_in is False and auth is not None:
+        if self._session is None and self._logged_in is False and auth is not None:
             _LOGGER.info("Not logged in, trying now.")
             if headers is None:
                 headers = self._headers
             return await _post_request(url, body, auth, headers)
-        elif self._session is None and self._logged_in is False and auth is None:
+        if self._session is None and self._logged_in is False and auth is None:
             raise NotLoggedIn()
-        elif self._session is not None and self._logged_in is False:
+        if self._session is not None and self._logged_in is False:
             raise RuntimeError("Invalid state. Session data available yet not logged in?")
-        elif self._session["expiry_time"] < datetime.now() and login_request:
+        if self._session["expiry_time"] < datetime.now() and login_request:
             _LOGGER.debug("Login request.")
             return await _post_request(url, body, auth, headers)
 
@@ -164,9 +164,9 @@ class RoosterSession:
 
         if method == "GET":
             return await _fetch_request(url, headers=headers)
-        elif method == "POST":
+        if method == "POST":
             return await _post_request(url, body=body, headers=headers)
-        elif method == "DELETE":
+        if method == "DELETE":
             return await _delete_request(url, body=body, headers=headers)
         else:
             raise ValueError("Invalid type argument.")
