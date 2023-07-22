@@ -47,7 +47,8 @@ URLS = {
 HEADERS = {
     "content-type": "application/json",
     "accept": "application/json",
-    "user-agent": f"Mozilla/5.0 Rooster Money {MOBILE_APP_VERSION}"
+    "user-agent": f"Mozilla/5.0 Rooster Money {MOBILE_APP_VERSION}",
+    "version": MOBILE_APP_VERSION
 }
 
 LOGIN_BODY={

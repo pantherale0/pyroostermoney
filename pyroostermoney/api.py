@@ -3,7 +3,6 @@
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-instance-attributes
-import json
 import logging
 import base64
 import asyncio
@@ -16,68 +15,6 @@ from .exceptions import InvalidAuthError, NotLoggedIn, AuthenticationExpired
 from .events import Events
 
 _LOGGER = logging.getLogger(__name__)
-
-async def _fetch_request(url, headers=None):
-    if headers is None:
-        headers=HEADERS
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{BASE_URL}/{url}", headers=headers) as response:
-            data = await response.json()
-            return {
-                "status": response.status,
-                "response": data
-            }
-
-async def _post_request(url, body: dict, auth=None, headers=None):
-    if headers is None:
-        headers=HEADERS
-    async with aiohttp.ClientSession() as session:
-        async with session.post(f"{BASE_URL}/{url}",
-                                json=body,
-                                headers=headers,
-                                auth=auth) as response:
-            #try:
-            if response.status == 401:
-                raise PermissionError("Unauthorized session")
-            data = await response.json()
-            return {
-                "status": response.status,
-                "response": data
-            }
-            # except:
-            #     data = await response.text()
-            #     return {
-            #         "status": response.status,
-            #         "response": json.loads(data)
-            #     }
-
-async def _put_request(url, body: dict, auth=None, headers=None):
-    if headers is None:
-        headers=HEADERS
-    async with aiohttp.ClientSession() as session:
-        async with session.put(f"{BASE_URL}/{url}",
-                                json=body,
-                                headers=headers,
-                                auth=auth) as response:
-            data = await response.json()
-            return {
-                "status": response.status,
-                "response": data
-            }
-
-async def _delete_request(url, body: dict, auth=None, headers=None):
-    if headers is None:
-        headers=HEADERS
-    async with aiohttp.ClientSession() as session:
-        async with session.delete(f"{BASE_URL}/{url}",
-                                json=body,
-                                headers=headers,
-                                auth=auth) as response:
-            data = await response.json()
-            return {
-                "status": response.status,
-                "response": data
-            }
 
 class RoosterSession:
     """The main Rooster Session."""
@@ -97,14 +34,41 @@ class RoosterSession:
         self.update_interval = update_interval
         self.use_updater = use_updater
 
+    async def _send_request(self,
+                      url,
+                      body: dict = None,
+                      auth=None,
+                      method="GET"):
+        """Handles sending HTTP requests"""
+        async with aiohttp.ClientSession() as session:
+            async with session.request(method=method,
+                                       url=f"{BASE_URL}/{url}",
+                                       json=body,
+                                       auth=auth,
+                                       headers=self._headers) as response:
+                if response.status == 401:
+                    raise PermissionError("Unauthorized session")
+                data = await response.json()
+                return {
+                    "status": response.status,
+                    "response": data
+                }
+
     def _parse_login(self, login_response, token):
         """Parses a login response"""
         if "tokens" in login_response:
             login_response=login_response.get("tokens")
+        if "error" in login_response:
+            error = login_response.get("error")
+            raise ConnectionError(error)
+        token_type = login_response.get("token_type")
+        access_token = login_response.get("access_token")
+
+        self._headers["Authorization"] = f"{token_type} {access_token}"
         return {
-                "access_token": login_response.get("access_token"),
+                "access_token": access_token,
                 "refresh_token": login_response.get("refresh_token"),
-                "token_type": login_response.get("token_type"),
+                "token_type": token_type,
                 "expiry_time": datetime.now() + timedelta(0,
                                                           login_response.get("expires_in")),
                 "security_code": token
@@ -134,8 +98,7 @@ class RoosterSession:
 
             login_response = await self.request_handler(url=URLS.get("login"),
                                                                 body=req_body,
-                                                                auth=auth,
-                                                                headers=self._headers)
+                                                                auth=auth)
 
             if login_response["status"] == 401:
                 raise InvalidAuthError(self._username, login_response["status"])
@@ -144,11 +107,6 @@ class RoosterSession:
             token = base64.b64encode(str(self._password[::-1]).encode('utf-8')).decode('utf-8')
 
             self._session = self._parse_login(login_response, token)
-
-            token_type = login_response["tokens"]["token_type"]
-            access_token = login_response["tokens"]["access_token"]
-
-            self._headers["Authorization"] = f"{token_type} {access_token}"
 
             self._logged_in = True
 
@@ -162,14 +120,16 @@ class RoosterSession:
             form.add_field("grant_type", "refresh_token")
             form.add_field("client_id", "rooster-app")
             form.add_field("refresh_token", self._session.get("refresh_token"))
-            async with session.post(OAUTH_TOKEN_URL, data=form) as request:
-                data = await request.json()
-                self._session = self._parse_login(data, self._session.get("security_code"))
+            try:
+                async with session.post(OAUTH_TOKEN_URL, data=form) as request:
+                    data = await request.json()
+                    self._session = self._parse_login(data, self._session.get("security_code"))
+            except ConnectionError:
+                await self.async_login()
 
     async def _internal_request_handler(self,
                                         url,
                                         body=None,
-                                        headers=None,
                                         auth=None,
                                         method="GET",
                                         login_request=False,
@@ -180,16 +140,14 @@ class RoosterSession:
             raise RuntimeError("Invalid state. Missing session data yet currently logged in?")
         if self._session is None and self._logged_in is False and auth is not None:
             _LOGGER.info("Not logged in, trying now.")
-            if headers is None:
-                headers = self._headers
-            return await _post_request(url, body, auth, headers)
+            return await self._send_request(url, body, auth, "POST")
         if self._session is None and self._logged_in is False and auth is None:
             raise NotLoggedIn()
         if self._session is not None and self._logged_in is False:
             raise RuntimeError("Invalid state. Session data available yet not logged in?")
         if self._session["expiry_time"] < datetime.now() and login_request:
             _LOGGER.debug("Login request.")
-            return await _post_request(url, body, auth, headers)
+            return await self._send_request(url, body, auth, "POST")
 
         # Check if auth has expired
         # pylint: disable=no-else-raise
@@ -197,27 +155,16 @@ class RoosterSession:
         if self._session["expiry_time"] < datetime.now():
             raise AuthenticationExpired()
 
-        if headers is None:
-            headers = self._headers
-
         if add_security_token:
-            headers["securitytoken"] = self._session["security_code"]
+            self._headers["securitytoken"] = self._session["security_code"]
+        elif "securitytoken" in self._headers:
+            self._headers.pop("securitytoken")
 
-        if method == "GET":
-            return await _fetch_request(url, headers=headers)
-        if method == "POST":
-            return await _post_request(url, body=body, headers=headers)
-        if method == "PUT":
-            return await _put_request(url, body=body, headers=headers)
-        if method == "DELETE":
-            return await _delete_request(url, body=body, headers=headers)
-        else:
-            raise ValueError("Invalid type argument.")
+        return await self._send_request(url=url, body=body, auth=auth, method=method.upper())
 
     async def request_handler(self,
                                         url,
                                         body=None,
-                                        headers=None,
                                         auth=None,
                                         method="GET",
                                         login_request=False,
@@ -228,7 +175,6 @@ class RoosterSession:
             return await self._internal_request_handler(
                 url=url,
                 body=body,
-                headers=headers,
                 auth=auth,
                 method=method,
                 login_request=login_request,
@@ -239,7 +185,6 @@ class RoosterSession:
             return await self._internal_request_handler(
                 url=url,
                 body=body,
-                headers=headers,
                 auth=auth,
                 method=method,
                 login_request=login_request
