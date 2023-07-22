@@ -3,6 +3,7 @@
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-instance-attributes
+import json
 import logging
 import base64
 import asyncio
@@ -35,11 +36,20 @@ async def _post_request(url, body: dict, auth=None, headers=None):
                                 json=body,
                                 headers=headers,
                                 auth=auth) as response:
+            #try:
+            if response.status == 401:
+                raise PermissionError("Unauthorized session")
             data = await response.json()
             return {
                 "status": response.status,
                 "response": data
             }
+            # except:
+            #     data = await response.text()
+            #     return {
+            #         "status": response.status,
+            #         "response": json.loads(data)
+            #     }
 
 async def _put_request(url, body: dict, auth=None, headers=None):
     if headers is None:

@@ -12,6 +12,7 @@ TIMEZONE="GMT+01:00"
 DEFAULT_PRECISION=2
 DEFAULT_BANK_NAME="Rooster Money"
 DEFAULT_BANK_TYPE="Business"
+DEFAULT_JOB_IMAGE_URL="https://images.roostermoney.com/static/default_job_icon.png"
 MOBILE_APP_VERSION="10.3.1"
 
 SAVINGS_POT_ID="SAVE_POT"

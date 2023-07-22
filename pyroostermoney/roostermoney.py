@@ -6,7 +6,7 @@ import logging
 import asyncio
 from datetime import datetime, timedelta
 
-from .const import URLS
+from .const import URLS, CURRENCY, DEFAULT_JOB_IMAGE_URL
 from .child import ChildAccount, Job
 from .family_account import FamilyAccount
 from .api import RoosterSession
@@ -129,3 +129,56 @@ class RoosterMoney(RoosterSession):
         account = await self.get_account_info()
         self.family_account =  FamilyAccount(response["response"], account, self)
         return self.family_account
+
+    async def create_master_job(self,
+                                children: list[ChildAccount],
+                                description: str,
+                                title: str,
+                                image: str = DEFAULT_JOB_IMAGE_URL,
+                                reward_amount: float = 1,
+                                starting_date: datetime = datetime.now(),
+                                anytime: bool = True,
+                                after_last_done: bool = False):
+        """Creates a master job"""
+        data = {
+            "childUserIds": [],
+            "masterJob": {
+                "createdByGuardianId": self.account_info.get("userId"),
+                "currency": CURRENCY,
+                "description": description,
+                "familyId": self.family_account.family_id,
+                "imageUrl": image,
+                "rewardAmount": reward_amount,
+                "scheduleInfo": {
+                    "afterLastDone": after_last_done,
+                    "dueAnyDay": anytime,
+                    "repeatEvery": 1,
+                    "startingDate": {
+                        "day": starting_date.date().day,
+                        "month": starting_date.date().month,
+                        "year": starting_date.date().year
+                    },
+                    "timeOfDay": starting_date.time().hour,
+                    "type": 1
+                },
+                "scheduleType": 1,
+                "title": title,
+                "type": 0
+            }
+        }
+
+        for child in children:
+            data["childUserIds"].append(child.user_id)
+
+        response = await self.request_handler(
+            url=URLS.get("get_master_jobs"),
+            body=data,
+            method="POST"
+        )
+
+        if response["status"] != 200:
+            raise SystemError()
+
+        await self.update()
+
+        self.events.fire_event(EventSource.JOBS, EventType.CREATED, response.get("response"))
