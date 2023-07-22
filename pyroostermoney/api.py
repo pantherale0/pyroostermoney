@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 
 import aiohttp
 
-from .const import HEADERS, BASE_URL, LOGIN_BODY, URLS
+from .const import HEADERS, BASE_URL, LOGIN_BODY, URLS, OAUTH_TOKEN_URL
 from .exceptions import InvalidAuthError, NotLoggedIn, AuthenticationExpired
 from .events import Events
 
@@ -74,6 +74,19 @@ class RoosterSession:
         self.update_interval = update_interval
         self.use_updater = use_updater
 
+    def _parse_login(self, login_response, token):
+        """Parses a login response"""
+        if "tokens" in login_response:
+            login_response=login_response.get("tokens")
+        return {
+                "access_token": login_response.get("access_token"),
+                "refresh_token": login_response.get("refresh_token"),
+                "token_type": login_response.get("token_type"),
+                "expiry_time": datetime.now() + timedelta(0,
+                                                          login_response.get("expires_in")),
+                "security_code": token
+            }
+
     async def async_login(self):
         """Logs into RoosterMoney and starts a new active session."""
         if self._logging_in.locked():
@@ -107,14 +120,7 @@ class RoosterSession:
             login_response = login_response["response"]
             token = base64.b64encode(str(self._password[::-1]).encode('utf-8')).decode('utf-8')
 
-            self._session = {
-                "access_token": login_response["tokens"]["access_token"],
-                "refresh_token": login_response["tokens"]["refresh_token"],
-                "token_type": login_response["tokens"]["token_type"],
-                "expiry_time": datetime.now() + timedelta(0,
-                                                          login_response["tokens"]["expires_in"]),
-                "security_code": token
-            }
+            self._session = self._parse_login(login_response, token)
 
             token_type = login_response["tokens"]["token_type"]
             access_token = login_response["tokens"]["access_token"]
@@ -124,6 +130,18 @@ class RoosterSession:
             self._logged_in = True
 
         return True
+
+    async def refresh_token(self):
+        """Refresh the current access token when the session expires."""
+        async with aiohttp.ClientSession() as session:
+            form = aiohttp.FormData()
+            form.add_field("audience", "rooster-app")
+            form.add_field("grant_type", "refresh_token")
+            form.add_field("client_id", "rooster-app")
+            form.add_field("refresh_token", self._session.get("refresh_token"))
+            async with session.post(OAUTH_TOKEN_URL, data=form) as request:
+                data = await request.json()
+                self._session = self._parse_login(data, self._session.get("security_code"))
 
     async def _internal_request_handler(self,
                                         url,
@@ -192,7 +210,7 @@ class RoosterSession:
                 add_security_token=add_security_token
             )
         except AuthenticationExpired:
-            await self.async_login()
+            await self.refresh_token()
             return await self._internal_request_handler(
                 url=url,
                 body=body,

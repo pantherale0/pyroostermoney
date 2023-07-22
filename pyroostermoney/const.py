@@ -3,6 +3,7 @@
 
 VERSION="0.2.2"
 BASE_URL="https://api.rooster.money"
+OAUTH_TOKEN_URL="https://auth.rooster.money/oidc/token"
 LANGUAGE="en-GB"
 COUNTRY="gb"
 CURRENCY="GBP"
@@ -13,10 +14,10 @@ DEFAULT_BANK_NAME="Rooster Money"
 DEFAULT_BANK_TYPE="Business"
 MOBILE_APP_VERSION="10.3.1"
 
-SAVINGS_POT_ID="savings"
-SPEND_POT_ID="spend"
-GIVE_POT_ID="give"
-GOAL_POT_ID="goal"
+SAVINGS_POT_ID="SAVE_POT"
+SPEND_POT_ID="SPEND_POT"
+GIVE_POT_ID="GIVE_POT"
+GOAL_POT_ID="GOAL_POT"
 
 URLS = {
     "login": "api/v1/parent",
@@ -37,7 +38,8 @@ URLS = {
     "get_child_standing_orders": "api/parent/child/{user_id}/standingorder",
     "create_child_standing_order": "api/parent/child/{user_id}/standingorder/",
     "delete_child_standing_order": "api/parent/child/{user_id}/standingorder/{delete_child_standing_order}",
-    "get_master_job_list": "api/parent/master-jobs"
+    "get_master_job_list": "api/parent/master-jobs",
+    "boost_pot": "api/v1/families/{family_id}/children/{user_id}/pots/{pot_id}/boost"
 }
 
 HEADERS = {
@@ -84,4 +86,16 @@ CREATE_PAYMENT_BODY={
     },
     "returnUrl": "roostermoneyapp://",
     "shopperEmail": ""
+}
+
+BOOST_BODY = {
+    "amount": {
+        "amount": 0.0,
+        "currency": CURRENCY,
+        "precision": DEFAULT_PRECISION
+    },
+    "metaData": {
+        "flowSource": "spend pot"
+    },
+    "reason": ""
 }
