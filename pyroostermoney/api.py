@@ -3,7 +3,6 @@
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-instance-attributes
-import json
 import logging
 import base64
 import asyncio
@@ -33,6 +32,20 @@ async def _post_request(url, body: dict, auth=None, headers=None):
         headers=HEADERS
     async with aiohttp.ClientSession() as session:
         async with session.post(f"{BASE_URL}/{url}",
+                                json=body,
+                                headers=headers,
+                                auth=auth) as response:
+            data = await response.json()
+            return {
+                "status": response.status,
+                "response": data
+            }
+
+async def _put_request(url, body: dict, auth=None, headers=None):
+    if headers is None:
+        headers=HEADERS
+    async with aiohttp.ClientSession() as session:
+        async with session.put(f"{BASE_URL}/{url}",
                                 json=body,
                                 headers=headers,
                                 auth=auth) as response:
@@ -184,6 +197,8 @@ class RoosterSession:
             return await _fetch_request(url, headers=headers)
         if method == "POST":
             return await _post_request(url, body=body, headers=headers)
+        if method == "PUT":
+            return await _put_request(url, body=body, headers=headers)
         if method == "DELETE":
             return await _delete_request(url, body=body, headers=headers)
         else:
