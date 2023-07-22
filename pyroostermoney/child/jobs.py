@@ -8,6 +8,18 @@ from enum import Enum
 from pyroostermoney.api import RoosterSession
 from pyroostermoney.const import CURRENCY, URLS
 
+class JobScheduleTypes(Enum):
+    """Job schedule types."""
+    REPEATING = 2
+    ANYTIME = 1
+    UNKNOWN = -1
+
+class JobTime(Enum):
+    """Job times."""
+    MORNING = 12
+    AFTERNOON = 17
+    ANYTIME = 23
+
 class JobState(Enum):
     """Job states."""
     POOL = 0
@@ -51,6 +63,7 @@ class Job:
                  time_of_day,
                  title,
                  job_type,
+                 schedule_type,
                  session,
                  user_id_list: list | None=None):
         self.allowance_period_id: int = allowance_period_id
@@ -67,7 +80,10 @@ class Job:
         self.reward_amount: float = reward_amount
         self.scheduled_job_id: int = scheduled_job_id
         self.state: JobState = state
-        self.time_of_day: int = time_of_day
+        self.time_of_day: JobTime = JobTime(time_of_day)
+        self.schedule_type: JobScheduleTypes = (
+            JobScheduleTypes(schedule_type) if schedule_type is not None
+            else JobScheduleTypes.UNKNOWN)
         self.title: str = title
         self.type: int = job_type
         self._session: RoosterSession = session
@@ -77,6 +93,13 @@ class Job:
     @staticmethod
     def from_dict(obj: dict, session) -> 'Job':
         """Converts to a job from a dict."""
+        if "scheduleInfo" in obj:
+            # Move nested scheduleInfo into main
+            for info in obj.get("scheduleInfo").keys():
+                if info == "type":
+                    info = "scheduleType"
+                obj[info] = obj.get("scheduleInfo").get(info)
+            obj["scheduleInfo"] = None
         if "dueDate" in obj:
             _due_date = datetime.strptime(obj.get("dueDate"), "%Y-%m-%d")
         else:
@@ -100,7 +123,8 @@ class Job:
             title=str(obj.get("title", "")),
             job_type=int(obj.get("type", 0)),
             session=session,
-            user_id_list=obj.get("childUserIds", None)
+            user_id_list=obj.get("childUserIds", None),
+            schedule_type=obj.get("scheduleType")
         )
 
     @staticmethod
@@ -128,5 +152,6 @@ class Job:
             ),
             body={
                 "message": message
-            }
+            },
+            method="POST"
         )

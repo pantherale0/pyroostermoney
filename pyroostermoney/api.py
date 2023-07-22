@@ -46,13 +46,20 @@ class RoosterSession:
                                        json=body,
                                        auth=auth,
                                        headers=self._headers) as response:
+                output = {
+                    "status": response.status,
+                    "response": {}
+                }
                 if response.status == 401:
                     raise PermissionError("Unauthorized session")
-                data = await response.json()
-                return {
-                    "status": response.status,
-                    "response": data
-                }
+                if response.status == 403:
+                    raise PermissionError("Access denied.")
+                if response.status == 204:
+                    return output
+                if response.status >= 200 and response.status < 204:
+                    output["response"] = await response.json()
+                    return output
+                return output
 
     def _parse_login(self, login_response, token):
         """Parses a login response"""

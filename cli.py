@@ -1,8 +1,11 @@
+# pylint: disable=broad-exception-caught
+# pylint: disable=invalid-name
 """CLI interface."""
 
 import logging
 import asyncio
 from pyroostermoney import RoosterMoney
+from pyroostermoney.child.jobs import JobActions
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,26 +28,40 @@ async def main():
             print("Username or password incorrect")
 
     while logged_in:
-        cmd = input("Enter a command: ").split()
-        if cmd[0] == "show_children":
-            for child in session.children:
-                print(f"Child {child.first_name}, ID {child.user_id}")
-        elif cmd[0] == "select_child":
-            if len(cmd) > 0:
-                selected_child = session.get_child_account(int(cmd[1]))
-        elif cmd[0] == "print_child":
-            print(selected_child.__dict__)
-        elif cmd[0] == "create_master_job":
-            if len(cmd) < 4:
-                print("Not enough parameters, 4 required, got ", len(cmd))
-            else:
+        try:
+            cmd = input("Enter a command: ").split()
+            if cmd[0] == "show_children":
+                for child in session.children:
+                    print(f"Child {child.first_name}, ID {child.user_id}")
+            elif cmd[0] == "select_child":
+                if len(cmd) > 0:
+                    selected_child = session.get_child_account(int(cmd[1]))
+            elif cmd[0] == "print_child":
+                print(selected_child.__dict__)
+            elif cmd[0] == "create_master_job":
                 raw_children = input("Enter child user IDs separated by a comma: ").split(",")
                 children = []
                 for c in raw_children:
                     children.append(session.get_child_account(int(c)))
-                await session.create_master_job(children, cmd[1], cmd[2], cmd[3], float(cmd[4]))
-        elif cmd[0] == "exit":
-            break
+                anytime = input("Job can be completed anytime? [Y/n] ") == "Y"
+                await session.master_jobs.create_master_job(children,
+                                                description=input("Enter job description: "),
+                                                title=input("Enter job title: "),
+                                                reward_amount=float(input("Enter job amount: ")),
+                                                anytime=anytime)
+            elif cmd[0] == "print_child_jobs":
+                for job in selected_child.jobs:
+                    print(f"Title, {job.title}, ID {job.scheduled_job_id}")
+            elif cmd[0] == "approve_job":
+                job_id = int(cmd[1])
+                for job in selected_child.jobs:
+                    if job.scheduled_job_id == job_id:
+                        await job.job_action(JobActions.APPROVE)
+                        break
+            elif cmd[0] == "exit":
+                break
+        except Exception as exc:
+            _LOGGER.error(exc)
 
 
 if __name__ == "__main__":

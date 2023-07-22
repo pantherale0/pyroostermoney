@@ -102,3 +102,30 @@ BOOST_BODY = {
     },
     "reason": ""
 }
+
+CREATE_MASTER_JOB_BODY = {
+            "childUserIds": [],
+            "masterJob": {
+                "createdByGuardianId": 1,
+                "currency": CURRENCY,
+                "description": "",
+                "familyId":1,
+                "imageUrl": "",
+                "rewardAmount": 0.0,
+                "scheduleInfo": {
+                    "afterLastDone": False,
+                    "dueAnyDay": False,
+                    "repeatEvery": 1,
+                    "startingDate": {
+                        "day": "",
+                        "month": "",
+                        "year": ""
+                    },
+                    "timeOfDay": 23,
+                    "type": 1
+                },
+                "scheduleType": 1,
+                "title": "",
+                "type": 0
+            }
+        }
