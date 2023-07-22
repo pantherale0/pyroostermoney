@@ -22,10 +22,10 @@ async def _fetch_request(url, headers=None):
         headers=HEADERS
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{BASE_URL}/{url}", headers=headers) as response:
-            text = await response.text()
+            data = await response.json()
             return {
                 "status": response.status,
-                "response": json.loads(text)
+                "response": data
             }
 
 async def _post_request(url, body: dict, auth=None, headers=None):
@@ -36,10 +36,10 @@ async def _post_request(url, body: dict, auth=None, headers=None):
                                 json=body,
                                 headers=headers,
                                 auth=auth) as response:
-            text = await response.text()
+            data = await response.json()
             return {
                 "status": response.status,
-                "response": json.loads(text)
+                "response": data
             }
 
 async def _delete_request(url, body: dict, auth=None, headers=None):
@@ -50,10 +50,10 @@ async def _delete_request(url, body: dict, auth=None, headers=None):
                                 json=body,
                                 headers=headers,
                                 auth=auth) as response:
-            text = await response.text()
+            data = await response.json()
             return {
                 "status": response.status,
-                "response": json.loads(text)
+                "response": data
             }
 
 class RoosterSession:

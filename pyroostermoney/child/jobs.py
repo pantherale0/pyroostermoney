@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 
 from pyroostermoney.api import RoosterSession
-from pyroostermoney.const import CURRENCY
+from pyroostermoney.const import CURRENCY, URLS
 
 class JobState(Enum):
     """Job states."""
@@ -22,6 +22,13 @@ class JobState(Enum):
 
     def __str__(self) -> str:
         return str(self.name)
+
+class JobActions(Enum):
+    """All supported job actions."""
+    APPROVE = 8
+
+    def __str__(self) -> str:
+        return str(self.name).lower()
 
 class Job:
     """A job."""
@@ -108,3 +115,18 @@ class Job:
             for job in raw_response.get(state, []):
                 output.append(Job.from_dict(job, session))
         return output
+
+    async def job_action(self, action: JobActions, message: str = ""):
+        """Performs the given action on a scheduled job."""
+        if self.scheduled_job_id is None:
+            raise NotImplementedError("This function is only available on scheduled jobs.")
+
+        await self._session.request_handler(
+            url=URLS.get("scheduled_job_action").format(
+                schedule_id=self.scheduled_job_id,
+                action=str(action)
+            ),
+            body={
+                "message": message
+            }
+        )

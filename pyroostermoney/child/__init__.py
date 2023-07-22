@@ -232,3 +232,16 @@ class ChildAccount:
         )
 
         return bool(output.get("status") == 200)
+
+    async def update_allowance(self, paused: bool = False, amount: float = 0.0):
+        """Updates the allowance for the child."""
+        data = {
+            "locked": paused,
+            "pocketMoneyAmount": amount,
+            "stripData": True,
+            "userId": self.user_id
+        }
+
+        await self._session.request_handler(URLS.get("get_child").format(user_id=self.user_id),
+                                            body=data,
+                                            method="PUT")
