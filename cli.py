@@ -1,5 +1,6 @@
 # pylint: disable=broad-exception-caught
 # pylint: disable=invalid-name
+# pylint: disable=too-many-branches
 """CLI interface."""
 
 import logging

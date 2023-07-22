@@ -1,3 +1,4 @@
+# pylint: disable=too-many-arguments
 """Master jobs interface."""
 
 from datetime import datetime
