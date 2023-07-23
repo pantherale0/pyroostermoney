@@ -22,15 +22,14 @@ class JobTime(Enum):
 
 class JobState(Enum):
     """Job states."""
-    POOL = 0
+    NO_PREVIOUS_STATE = 0
     TODO = 1
-    SKIPPED = 2
-    PAUSED = 3
-    OVERDUE = 4
-    NO_PREVIOUS_STATE = 5
+    AWAITING_APPROVAL = 2
+    APPROVED = 3
+    PAUSED = 4
+    OVERDUE = 5
     NOT_DONE = 6
-    AWAITING_APPROVAL = 7
-    APPROVED = 8
+    SKIPPED = 7
 
     def __str__(self) -> str:
         return str(self.name)

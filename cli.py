@@ -52,7 +52,7 @@ async def main():
                                                 anytime=anytime)
             elif cmd[0] == "print_child_jobs":
                 for job in selected_child.jobs:
-                    print(f"Title, {job.title}, ID {job.scheduled_job_id}")
+                    print(f"Title {job.title}, State {job.state}, ID {job.scheduled_job_id}")
             elif cmd[0] == "approve_job":
                 job_id = int(cmd[1])
                 for job in selected_child.jobs:
