@@ -18,6 +18,7 @@ class JobTime(Enum):
     """Job times."""
     MORNING = 12
     AFTERNOON = 17
+    EVENING = 22
     ANYTIME = 23
 
 class JobState(Enum):
