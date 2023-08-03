@@ -52,7 +52,9 @@ class Events():
         """Unsubscribe from an event"""
         if event_id in self._subscriptions:
             self._subscriptions.pop(event_id)
-            self.fire_event(EventSource.INTERNAL, EventType.EVENT_UNSUBSCRIBE, {"event_id": event_id})
+            self.fire_event(EventSource.INTERNAL,
+                            EventType.EVENT_UNSUBSCRIBE,
+                            {"event_id": event_id})
         else:
             raise KeyError("ID not subscribed")
 
