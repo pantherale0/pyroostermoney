@@ -21,6 +21,7 @@ class EventSource(Enum):
     JOBS = 4
     TRANSACTIONS = 8
     STANDING_ORDER = 16
+    CARD = 32
 
     def __str__(self) -> str:
         return self.name

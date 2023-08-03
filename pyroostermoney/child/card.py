@@ -4,6 +4,7 @@
 
 from pyroostermoney.api import RoosterSession
 from pyroostermoney.const import URLS
+from pyroostermoney.events import EventSource, EventType
 
 class Card:
     """A card."""
@@ -19,6 +20,8 @@ class Card:
                  status: str,
                  user_id: str,
                  session: RoosterSession) -> None:
+        self._card_options = {}
+        self._session = session
         self.masked_card_number = masked_card_number
         self.expiry_date = expiry_date
         self.name = name
@@ -27,13 +30,35 @@ class Card:
         self.description = description
         self.category = category
         self.status = status
-        self._session = session
         self.user_id = user_id
         self.pin = None
+        self.card_id = None
+        self.contactless_limit = None
+        self.contactless_count = None
+        self.spend_limit = None
+        self.total_spend = None
 
     async def init_card_pin(self) -> None:
         """initializes the card pin."""
         # first we need to get the family cards
+        await self.update_family_card_entry()
+        # if status is still in response, we didn't get a card
+        if "status" in self._card_options:
+            raise ValueError(f"No card found for {self.user_id}")
+
+        response = await self._session.request_handler(
+            url=URLS.get("get_child_card_pin").format(
+                user_id=self.user_id,
+                card_id=self.card_id
+            ),
+            add_security_token=True
+        )
+
+        response: dict = response["response"]
+        self.pin = response.get("pin", None)
+
+    async def update_family_card_entry(self):
+        """Requests an update for the internal card entry"""
         response = await self._session.request_handler(
             url=URLS.get("get_family_account_cards")
         )
@@ -45,20 +70,18 @@ class Card:
                     response = card
                     break
 
-        # if status is still in response, we didn't get a card
-        if "status" in response:
-            raise ValueError(f"No card found for {self.user_id}")
-
-        response = await self._session.request_handler(
-            url=URLS.get("get_child_card_pin").format(
-                user_id=self.user_id,
-                card_id=response["cardId"]
-            ),
-            add_security_token=True
-        )
-
-        response: dict = response["response"]
-        self.pin = response.get("pin", None)
+        self._card_options = response
+        self.card_id = response.get("cardId", None)
+        self.contactless_limit = response.get("sca", {}).get("countLimit", 5)
+        self.contactless_count = response.get("sca", {}).get("count", 0)
+        self.spend_limit = response.get("sca", {}).get("spendLimit", {}).get("amount", 135)/100
+        self.total_spend = response.get("sca", {}).get("totalSpend", {}).get("amount", 135)/100
+        # raise an event if the contactless limit is reached
+        if self.contactless_count is self.contactless_limit:
+            self._session.events.fire_event(EventSource.CARD, EventType.UPDATED, {
+                "card_id": self.card_id,
+                "card_event": "CONTACTLESS_LIMIT"
+            })
 
     @staticmethod
     def parse_response(raw: dict, user_id: str, session: RoosterSession) -> 'Card':

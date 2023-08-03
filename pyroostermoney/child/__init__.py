@@ -17,7 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 class ChildAccount:
     """The child account."""
 
-    def __init__(self, raw_response: dict, session: RoosterSession, exclude_card = False) -> None:
+    def __init__(self, raw_response: dict, session: RoosterSession, exclude_card_pin = False) -> None:
         self._parse_response(raw_response)
         self._session = session
         self.pots: list[Pot] = []
@@ -27,7 +27,7 @@ class ChildAccount:
         self.active_allowance_period_id: int = None
         self.transactions: list[Transaction] = []
         self.latest_transaction: Transaction = None
-        self._exclude_card = exclude_card
+        self._exclude_card_pin = exclude_card_pin
 
     def __del__(self):
         pass
@@ -47,9 +47,7 @@ class ChildAccount:
     async def perform_init(self):
         """Performs init for some internal async props."""
         await self.get_pocket_money()
-        if not self._exclude_card:
-            await self.get_card_details()
-            self._exclude_card=True
+        await self.get_card_details()
         await self.get_standing_orders()
         await self.get_active_allowance_period()
         await self.get_current_jobs()
@@ -165,6 +163,10 @@ class ChildAccount:
 
     async def get_card_details(self):
         """Returns the card details for the child."""
+        if self.card is not None:
+            await self.card.update_family_card_entry() # Only run the updater if already set
+            return self.card
+
         card_details = await self._session.request_handler(
             URLS.get("get_child_card_details").format(
                 user_id=self.user_id
@@ -172,6 +174,9 @@ class ChildAccount:
         )
 
         self.card = Card.parse_response(card_details["response"], self.user_id, self._session)
+        if self._exclude_card_pin == True:
+            return self.card
+        
         await self.card.init_card_pin()
         return self.card
 
