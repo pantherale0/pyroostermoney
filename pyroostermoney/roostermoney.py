@@ -87,15 +87,14 @@ class RoosterMoney(RoosterSession):
         children = account_info["children"]
         for child in children:
             if child.get("userId") not in self._discovered_children:
-                child = ChildAccount(child, self, self._remove_card_information)
-                await child.perform_init() # calling this will init some extra props.
+                child = await ChildAccount.create(child.get("userId"),
+                                                self,
+                                                self._remove_card_information)
                 self._discovered_children.append(child.user_id)
                 self.children.append(child)
                 self.events.fire_event(EventSource.CHILD, EventType.CREATED, {
                     "user_id": child.user_id
                 })
-            else:
-                await self.children[child.get("userId")].update()
         _LOGGER.debug(self._discovered_children)
         self._cleanup()
 

@@ -3,7 +3,7 @@
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-arguments
 from datetime import datetime
-from enum import Enum
+from enum import Enum, IntEnum
 
 from pyroostermoney.api import RoosterSession
 from pyroostermoney.const import CURRENCY, URLS
@@ -14,7 +14,7 @@ class JobScheduleTypes(Enum):
     ANYTIME = 1
     UNKNOWN = -1
 
-class JobTime(Enum):
+class JobTime(IntEnum):
     """Job times."""
     MORNING = 12
     AFTERNOON = 17
@@ -138,7 +138,7 @@ class Job:
         for state in raw_response:
             for job in raw_response.get(state, []):
                 output.append(Job.from_dict(job, session))
-        return output
+        return sorted(output, key=lambda job: (job.due_date, job.time_of_day), reverse=True)
 
     async def job_action(self, action: JobActions, message: str = ""):
         """Performs the given action on a scheduled job."""

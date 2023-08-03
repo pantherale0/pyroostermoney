@@ -1,7 +1,8 @@
 """Defines some standard values for a Natwest Rooster Money child."""
 # pylint: disable=too-many-instance-attributes
 import logging
-from datetime import datetime, date
+import asyncio
+from datetime import datetime, date, timedelta
 
 from pyroostermoney.const import URLS
 from pyroostermoney.api import RoosterSession
@@ -17,9 +18,22 @@ _LOGGER = logging.getLogger(__name__)
 class ChildAccount:
     """The child account."""
 
-    def __init__(self, raw_response: dict, session: RoosterSession, exclude_card_pin = False) -> None:
-        self._parse_response(raw_response)
+    def __init__(self, user_id: int,
+                 session: RoosterSession,
+                 exclude_card_pin = False) -> None:
+        self._exclude_card_pin = exclude_card_pin
         self._session = session
+        self._update_lock = asyncio.Lock()
+        self._updater: asyncio.Task = None
+        self.user_id = user_id
+        self.interest_rate = None
+        self.available_pocket_money = None
+        self.currency = None
+        self.first_name = None
+        self.surname = None
+        self.gender = None
+        self.uses_real_money = -1
+        self.profile_image = ""
         self.pots: list[Pot] = []
         self.card: Card = None
         self.standing_orders: list[StandingOrder] = []
@@ -27,13 +41,12 @@ class ChildAccount:
         self.active_allowance_period_id: int = None
         self.transactions: list[Transaction] = []
         self.latest_transaction: Transaction = None
-        self._exclude_card_pin = exclude_card_pin
 
     def __del__(self):
-        pass
-        # if self._session.use_updater:
-        #     self._updater.cancel()
-        #     self._updater = None
+        _LOGGER.debug("Delete ChildAccount")
+        if self._session.use_updater:
+            self._updater.cancel()
+            self._updater = None
 
     def __eq__(self, obj):
         if not isinstance(obj, ChildAccount):
@@ -44,23 +57,40 @@ class ChildAccount:
             self.active_allowance_period_id == obj.active_allowance_period_id
         )
 
-    async def perform_init(self):
-        """Performs init for some internal async props."""
+    @classmethod
+    async def create(cls,
+                     user_id: int,
+                     session: RoosterSession,
+                     exclude_card_pin = True) -> 'ChildAccount':
+        """Inits and creates a child account object."""
+        self = cls(user_id, session, exclude_card_pin)
+        await self._update()
+        if session.use_updater:
+            _LOGGER.debug("Using auto updater for ChildAccount")
+            self._updater = asyncio.create_task(self._update_scheduler())
+        return self
+
+
+    async def _update_scheduler(self):
+        """Automatic updater"""
+        while True:
+            next_time = datetime.now() + timedelta(seconds=self._session.update_interval)
+            while datetime.now() < next_time:
+                await asyncio.sleep(1)
+            await self._update()
+
+    async def _update(self):
+        """Updates the cached data for this child."""
+        p_self = self
+        _LOGGER.debug("Update ChildAccount")
+        self._parse_response(await self._session.request_handler(
+            url=URLS.get("get_child").format(user_id=self.user_id)))
         await self.get_pocket_money()
         await self.get_card_details()
         await self.get_standing_orders()
         await self.get_active_allowance_period()
         await self.get_current_jobs()
         await self.get_spend_history()
-
-    async def update(self):
-        """Updates the cached data for this child."""
-        p_self = self
-        _LOGGER.debug("Update ChildAccount")
-        response = await self._session.request_handler(
-            url=URLS.get("get_child").format(user_id=self.user_id))
-        self._parse_response(response)
-        await self.perform_init()
         if (p_self is not None and
             p_self.active_allowance_period_id != self.active_allowance_period_id or
             p_self.available_pocket_money != self.available_pocket_money):
@@ -80,7 +110,6 @@ class ChildAccount:
         self.surname = raw_response["surname"]
         self.gender = "male" if raw_response["gender"] == 1 else "female"
         self.uses_real_money = raw_response["realMoneyStatus"] == 1
-        self.user_id = raw_response["userId"]
         self.profile_image = raw_response["profileImageUrl"]
 
     async def get_active_allowance_period(self):
@@ -174,9 +203,9 @@ class ChildAccount:
         )
 
         self.card = Card.parse_response(card_details["response"], self.user_id, self._session)
-        if self._exclude_card_pin == True:
+        if self._exclude_card_pin is True:
             return self.card
-        
+
         await self.card.init_card_pin()
         return self.card
 
