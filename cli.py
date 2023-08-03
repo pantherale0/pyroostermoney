@@ -21,8 +21,9 @@ async def main():
         password = input("Please enter your password: ")
         card_info = input("Collect card information? [Y/n] ")
         try:
-            session = RoosterMoney(username, password, remove_card_information=card_info=="n")
-            await session.async_login()
+            session = await RoosterMoney.create(username,
+                                                password,
+                                                remove_card_information=card_info=="n")
             print("Logged in as ", username)
             logged_in = True
         except PermissionError:

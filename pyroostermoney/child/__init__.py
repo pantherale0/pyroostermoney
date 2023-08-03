@@ -4,7 +4,7 @@ import logging
 import asyncio
 from datetime import datetime, date, timedelta
 
-from pyroostermoney.const import URLS
+from pyroostermoney.const import URLS, CHILD_MAX_TRANSACTION_COUNT
 from pyroostermoney.api import RoosterSession
 from pyroostermoney.events import EventSource, EventType
 from .money_pot import Pot
@@ -40,6 +40,7 @@ class ChildAccount:
         self.jobs: list[Job] = []
         self.active_allowance_period_id: int = None
         self.transactions: list[Transaction] = []
+        self.declined_transactions: list[Transaction] = []
         self.latest_transaction: Transaction = None
 
     def __del__(self):
@@ -129,22 +130,42 @@ class ChildAccount:
 
         return active_periods
 
-    async def get_spend_history(self, count=10) -> list[Transaction]:
-        """Gets the spend history"""
+    async def _update_spend_history(self, count=10):
+        """Internal update handler for the spend history"""
         url = URLS.get("get_child_spend_history").format(
             user_id=self.user_id,
             count=count
         )
         response = await self._session.request_handler(url=url)
         self.transactions = Transaction.parse_response(response["response"])
+        # declined transaction should be ignored as it did not complete
+        # therefore it doesn't count towards the "spend history"
+        self.declined_transactions = list(filter(lambda x: x.declined, self.transactions))
+        self.transactions = list(filter(lambda x: (x.declined is not True), self.transactions))
         p_transaction = self.latest_transaction
         self.latest_transaction = self.transactions[len(self.transactions)-1]
         if (p_transaction is not None
             and self.latest_transaction.transaction_id != p_transaction.transaction_id):
             self._session.events.fire_event(EventSource.TRANSACTIONS, EventType.UPDATED, {
                 "old_transaction_id": p_transaction.transaction_id,
-                "new_transaction_id": self.latest_transaction.transaction_id
+                "new_transaction_id": self.latest_transaction.transaction_id,
+                "declined": self.latest_transaction.declined,
+                "declined_reason": self.latest_transaction.declined_reason
             })
+
+    async def get_spend_history(self, count=10) -> list[Transaction]:
+        """Gets the spend history"""
+        await self._update_spend_history(count)
+        required = count
+        # increase count dynamically to ignore declines
+        while len(self.transactions) < required:
+            _LOGGER.debug("ChildAccount get_spend_history returned only %s events",
+                          len(self.transactions))
+            count += 1
+            await self._update_spend_history(count)
+            if count == CHILD_MAX_TRANSACTION_COUNT:
+                break
+
         return self.transactions
 
     async def get_current_jobs(self) -> list[Job]:

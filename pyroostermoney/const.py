@@ -20,6 +20,8 @@ SPEND_POT_ID="SPEND_POT"
 GIVE_POT_ID="GIVE_POT"
 GOAL_POT_ID="GOAL_POT"
 
+CHILD_MAX_TRANSACTION_COUNT=15 # maximum count for get_spend_history
+
 URLS = {
     "login": "api/v1/parent",
     "get_account_info": "api/parent",

@@ -39,12 +39,14 @@ class Transaction:
         self.transaction_type = transaction_type
         self.user_id = user_id
         self.currency = currency
+        self.declined = self.transaction_type == "CARD_DECLINE"
+        self.declined_reason = []
 
     @staticmethod
     def from_dict(obj: dict) -> 'Transaction':
         """Converts a JSON response to a Transaction type"""
 
-        return Transaction(
+        transaction = Transaction(
             action_user=obj.get("actionUserId"),
             amount=obj.get("amount"),
             new_balance=obj.get("balance"),
@@ -60,6 +62,9 @@ class Transaction:
             transaction_type=obj.get("type"),
             user_id=obj.get("userId")
         )
+        if transaction.declined:
+            transaction.declined_reason = obj.get("declines")
+        return transaction
 
     @staticmethod
     def parse_response(obj: list) -> list['Transaction']:
