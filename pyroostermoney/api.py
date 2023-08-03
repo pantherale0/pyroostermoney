@@ -20,12 +20,10 @@ class RoosterSession:
     """The main Rooster Session."""
 
     def __init__(self,
-                 username: str,
-                 password: str,
                  update_interval: int=30,
                  use_updater: bool=False) -> None:
-        self._username = username
-        self._password = password
+        self._username = ""
+        self._password = ""
         self._session = None
         self._headers = HEADERS
         self._logged_in = False
@@ -81,7 +79,7 @@ class RoosterSession:
                 "security_code": token
             }
 
-    async def async_login(self):
+    async def _session_start(self, username, password):
         """Logs into RoosterMoney and starts a new active session."""
         if self._logging_in.locked():
             _LOGGER.warning("Login already attempting. Only one execution allowed.")
@@ -90,6 +88,8 @@ class RoosterSession:
             return True
 
         async with self._logging_in:
+            self._username = username
+            self._password = password
             if self._session is not None:
                 if self._session.get("expiry_time") > datetime.now():
                     _LOGGER.debug("Not logging in again, session already active.")
@@ -132,7 +132,7 @@ class RoosterSession:
                     data = await request.json()
                     self._session = self._parse_login(data, self._session.get("security_code"))
             except ConnectionError:
-                await self.async_login()
+                await self._session_start(self._username, self._password)
 
     async def _internal_request_handler(self,
                                         url,

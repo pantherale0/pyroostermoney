@@ -73,11 +73,14 @@ class Card:
         self._card_options = response
         self.card_id = response.get("cardId", None)
         self.contactless_limit = response.get("sca", {}).get("countLimit", 5)
+        previous_count = self.contactless_count
         self.contactless_count = response.get("sca", {}).get("count", 0)
         self.spend_limit = response.get("sca", {}).get("spendLimit", {}).get("amount", 135)/100
         self.total_spend = response.get("sca", {}).get("totalSpend", {}).get("amount", 135)/100
         # raise an event if the contactless limit is reached
-        if self.contactless_count is self.contactless_limit:
+        if (self.contactless_count is self.contactless_limit) and (
+            self.contactless_count is not previous_count):
+
             self._session.events.fire_event(EventSource.CARD, EventType.UPDATED, {
                 "card_id": self.card_id,
                 "card_event": "CONTACTLESS_LIMIT"

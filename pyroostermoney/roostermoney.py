@@ -19,14 +19,10 @@ class RoosterMoney(RoosterSession):
     """The RoosterMoney module."""
 
     def __init__(self,
-                 username: str,
-                 password: str,
                  update_interval: int=30,
                  use_updater: bool=False,
                  remove_card_information = False) -> None:
         super().__init__(
-            username=username,
-            password=password,
             use_updater=use_updater,
             update_interval=update_interval
         )
@@ -46,8 +42,17 @@ class RoosterMoney(RoosterSession):
             self._updater.cancel()
             self._updater = None
 
-    async def async_login(self):
-        await super().async_login()
+    @classmethod
+    async def create(cls,
+                 username: str,
+                 password: str,
+                 update_interval: int=30,
+                 remove_card_information = False):
+        """Starts a online session with Rooster Money"""
+        self = cls(update_interval=update_interval,
+                          use_updater=True,
+                          remove_card_information=remove_card_information)
+        await self._session_start(username, password)
         await self.get_family_account()
         self.master_jobs = MasterJobs(self)
         await self.update()
@@ -55,6 +60,7 @@ class RoosterMoney(RoosterSession):
             _LOGGER.debug("Using auto updater for RoosterMoney")
             self._updater = asyncio.create_task(self._update_scheduler())
         self._init = False
+        return self
 
     async def _update_scheduler(self):
         """Automatic updater"""
@@ -70,15 +76,13 @@ class RoosterMoney(RoosterSession):
             return True
 
         async with self._update_lock:
-            await self.get_children()
+            await self._update_children()
             await self.master_jobs.update()
             self.master_job_list = self.master_jobs.jobs
-            for child in self.children:
-                await child.update()
             await self.family_account.update()
 
-    async def get_children(self) -> list[ChildAccount]:
-        """Returns a list of available children."""
+    async def _update_children(self):
+        """Updates the list of available children."""
         account_info = await self.get_account_info()
         children = account_info["children"]
         for child in children:
@@ -90,8 +94,13 @@ class RoosterMoney(RoosterSession):
                 self.events.fire_event(EventSource.CHILD, EventType.CREATED, {
                     "user_id": child.user_id
                 })
+            else:
+                await self.children[child.get("userId")].update()
         _LOGGER.debug(self._discovered_children)
         self._cleanup()
+
+    def get_children(self) -> list[ChildAccount]:
+        """Returns a list of available children (compatibility only)"""
         return self.children
 
     def _cleanup(self) -> None:
