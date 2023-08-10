@@ -1,8 +1,7 @@
 """Defines some standard values for a Natwest Rooster Money child."""
 # pylint: disable=too-many-instance-attributes
 import logging
-import asyncio
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 
 from pyroostermoney.const import URLS, CHILD_MAX_TRANSACTION_COUNT
 from pyroostermoney.api import RoosterSession
@@ -23,8 +22,6 @@ class ChildAccount:
                  exclude_card_pin = False) -> None:
         self._exclude_card_pin = exclude_card_pin
         self._session = session
-        self._update_lock = asyncio.Lock()
-        self._updater: asyncio.Task = None
         self.user_id = user_id
         self.interest_rate = None
         self.available_pocket_money = None
@@ -43,12 +40,6 @@ class ChildAccount:
         self.declined_transactions: list[Transaction] = []
         self.latest_transaction: Transaction = None
 
-    def __del__(self):
-        _LOGGER.debug("Delete ChildAccount")
-        if self._session.use_updater:
-            self._updater.cancel()
-            self._updater = None
-
     def __eq__(self, obj):
         if not isinstance(obj, ChildAccount):
             return NotImplemented
@@ -65,22 +56,10 @@ class ChildAccount:
                      exclude_card_pin = True) -> 'ChildAccount':
         """Inits and creates a child account object."""
         self = cls(user_id, session, exclude_card_pin)
-        await self._update()
-        if session.use_updater:
-            _LOGGER.debug("Using auto updater for ChildAccount")
-            self._updater = asyncio.create_task(self._update_scheduler())
+        await self.update()
         return self
 
-
-    async def _update_scheduler(self):
-        """Automatic updater"""
-        while True:
-            next_time = datetime.now() + timedelta(seconds=self._session.update_interval)
-            while datetime.now() < next_time:
-                await asyncio.sleep(1)
-            await self._update()
-
-    async def _update(self):
+    async def update(self):
         """Updates the cached data for this child."""
         p_self = self
         _LOGGER.debug("Update ChildAccount")

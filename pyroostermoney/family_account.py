@@ -3,7 +3,6 @@
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
 
-import asyncio
 import logging
 from datetime import datetime
 
@@ -22,8 +21,6 @@ class FamilyAccount:
                  session: RoosterSession) -> None:
         self._session = session
         self._parse_response(raw_response, account_info)
-        self._update_lock = asyncio.Lock()
-        self.last_updated = datetime.now()
 
     def _parse_response(self, raw_response: dict, account_info: dict):
         """Parses the raw response."""
@@ -44,23 +41,19 @@ class FamilyAccount:
 
     async def update(self):
         """Updates the FamilyAccount object data."""
-        if self._update_lock.locked():
-            return True
-
-        async with self._update_lock:
-            family_account = await self._session.request_handler(
-                url=URLS.get("get_family_account"))
-            account = await self._session.request_handler(
-                url=URLS.get("get_account_info")
-            )
-            p_account = self.__dict__
-            self._parse_response(raw_response=family_account, account_info=account)
-            self.last_updated = datetime.now()
-            if p_account is not self.__dict__:
-                self._session.events.fire_event(EventSource.FAMILY_ACCOUNT, EventType.UPDATED,
-                                                {
-                                                    "user_id": self.account_number
-                                                })
+        family_account = await self._session.request_handler(
+            url=URLS.get("get_family_account"))
+        account = await self._session.request_handler(
+            url=URLS.get("get_account_info")
+        )
+        p_account = self.__dict__
+        self._parse_response(raw_response=family_account, account_info=account)
+        self.last_updated = datetime.now()
+        if p_account is not self.__dict__:
+            self._session.events.fire_event(EventSource.FAMILY_ACCOUNT, EventType.UPDATED,
+                                            {
+                                                "user_id": self.account_number
+                                            })
 
     @property
     def bank_transfer_details(self):

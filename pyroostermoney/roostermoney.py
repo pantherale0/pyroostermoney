@@ -3,8 +3,6 @@
 # pylint: disable=too-many-arguments
 
 import logging
-import asyncio
-from datetime import datetime, timedelta
 
 from .const import URLS
 from .child import ChildAccount, Job
@@ -19,67 +17,46 @@ class RoosterMoney(RoosterSession):
     """The RoosterMoney module."""
 
     def __init__(self,
-                 update_interval: int=30,
-                 use_updater: bool=False,
                  remove_card_information = False) -> None:
-        super().__init__(
-            use_updater=use_updater,
-            update_interval=update_interval
-        )
+        super().__init__()
         self.account_info = None
         self.children: list[ChildAccount] = []
         self.master_job_list: list[Job] = []
         self.master_jobs: MasterJobs = None
         self._discovered_children: list = []
         self.family_account: FamilyAccount = None
-        self._update_lock = asyncio.Lock()
-        self._updater = None
         self._remove_card_information = remove_card_information
         self._init = True
-
-    def __del__(self):
-        if self.use_updater:
-            self._updater.cancel()
-            self._updater = None
 
     @classmethod
     async def create(cls,
                  username: str,
                  password: str,
-                 update_interval: int=30,
                  remove_card_information = False):
         """Starts a online session with Rooster Money"""
-        self = cls(update_interval=update_interval,
-                          use_updater=True,
-                          remove_card_information=remove_card_information)
+        self = cls(remove_card_information=remove_card_information)
         await self._session_start(username, password)
         await self.get_family_account()
         self.master_jobs = MasterJobs(self)
         await self.update()
-        if self.use_updater:
-            _LOGGER.debug("Using auto updater for RoosterMoney")
-            self._updater = asyncio.create_task(self._update_scheduler())
         self._init = False
         return self
 
-    async def _update_scheduler(self):
-        """Automatic updater"""
-        while True:
-            next_time = datetime.now() + timedelta(seconds=self.update_interval)
-            while datetime.now() < next_time:
-                await asyncio.sleep(1)
-            await self.update()
-
     async def update(self):
         """Perform an update of all root types"""
-        if self._update_lock.locked():
-            return True
-
-        async with self._update_lock:
-            await self._update_children()
-            await self.master_jobs.update()
-            self.master_job_list = self.master_jobs.jobs
-            await self.family_account.update()
+        self.events.fire_event(EventSource.INTERNAL,
+                               EventType.UPDATED,
+                               {"update_state": "started"})
+        await self._update_children()
+        await self.master_jobs.update()
+        self.master_job_list = self.master_jobs.jobs
+        await self.family_account.update()
+        if self._init is False:
+            for child in self.children:
+                await child.update()
+        self.events.fire_event(EventSource.INTERNAL,
+                               EventType.UPDATED,
+                               {"update_state": "finished"})
 
     async def _update_children(self):
         """Updates the list of available children."""

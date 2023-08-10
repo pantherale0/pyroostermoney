@@ -19,9 +19,7 @@ _LOGGER = logging.getLogger(__name__)
 class RoosterSession:
     """The main Rooster Session."""
 
-    def __init__(self,
-                 update_interval: int=30,
-                 use_updater: bool=False) -> None:
+    def __init__(self) -> None:
         self._username = ""
         self._password = ""
         self._session = None
@@ -29,8 +27,6 @@ class RoosterSession:
         self._logged_in = False
         self._logging_in = asyncio.Lock()
         self.events = Events()
-        self.update_interval = update_interval
-        self.use_updater = use_updater
 
     async def _send_request(self,
                       url,
