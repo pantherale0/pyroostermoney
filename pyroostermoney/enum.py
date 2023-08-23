@@ -45,3 +45,30 @@ class JobActions(Enum):
 
     def __str__(self) -> str:
         return str(self.name).lower()
+
+class EventType(Enum):
+    """Valid event types"""
+    ALL = 0
+    UPDATED = 1
+    CREATED = 2
+    DELETED = 4
+    AUTH = 8
+    EVENT_SUBSCRIBE = 16
+    EVENT_UNSUBSCRIBE = 32
+
+    def __str__(self) -> str:
+        return self.name
+
+class EventSource(Enum):
+    """Valid event sources"""
+    ALL = 0
+    CHILD = 1
+    FAMILY_ACCOUNT = 2
+    JOBS = 4
+    TRANSACTIONS = 8
+    STANDING_ORDER = 16
+    CARD = 32
+    INTERNAL = 64
+
+    def __str__(self) -> str:
+        return self.name
