@@ -1,7 +1,7 @@
 # pylint: disable=line-too-long
 """Static Rooster Money variables"""
 
-VERSION="0.3.0"
+VERSION="0.3.1"
 BASE_URL="https://api.rooster.money"
 OAUTH_TOKEN_URL="https://auth.rooster.money/oidc/token"
 LANGUAGE="en-GB"
@@ -13,7 +13,7 @@ DEFAULT_PRECISION=2
 DEFAULT_BANK_NAME="Rooster Money"
 DEFAULT_BANK_TYPE="Business"
 DEFAULT_JOB_IMAGE_URL="https://images.roostermoney.com/static/default_job_icon.png"
-MOBILE_APP_VERSION="10.3.2"
+MOBILE_APP_VERSION="10.4.1"
 
 SAVINGS_POT_ID="SAVE_POT"
 SPEND_POT_ID="SPEND_POT"
