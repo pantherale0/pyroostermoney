@@ -27,6 +27,9 @@ class FamilyAccount:
         if "response" in raw_response:
             raw_response = raw_response["response"]
 
+        if "response" in account_info:
+            account_info = account_info["response"]
+
         self.account_number = raw_response["accountNumber"]
         self.sort_code = raw_response["sortCode"]
         self._precision = raw_response["suggestedMonthlyTransfer"]["precision"]
