@@ -4,7 +4,7 @@
 from datetime import datetime
 
 from .child import Job, ChildAccount
-from .child.jobs import JobTime
+from .enum import JobTime, Weekdays, JobScheduleTypes
 from .const import URLS, DEFAULT_JOB_IMAGE_URL, CREATE_MASTER_JOB_BODY
 from .api import RoosterSession
 from .events import EventSource, EventType
@@ -29,7 +29,9 @@ class MasterJobs:
                                 starting_date: datetime = datetime.now(),
                                 anytime: bool = True,
                                 after_last_done: bool = False,
-                                job_time: JobTime = JobTime.MORNING):
+                                job_time: JobTime = JobTime.MORNING,
+                                repeat: list[Weekdays] = None,
+                                job_type: JobScheduleTypes = JobScheduleTypes.ANYTIME):
         """Creates a master job"""
         data = CREATE_MASTER_JOB_BODY
         data["masterJob"]["createdByGuardianId"] = self._session.account_info.get("userId")
@@ -46,8 +48,14 @@ class MasterJobs:
                         "year": starting_date.date().year
                     },
                     "timeOfDay": int(job_time),
-                    "type": 1
+                    "type": int(job_type)
                 }
+
+        if job_type == JobScheduleTypes.REPEATING and repeat is not None:
+            schedule_info["daysOfTheWeek"] = []
+            for day in repeat:
+                schedule_info["daysOfTheWeek"].append(int(day))
+
         data["masterJob"]["scheduleInfo"] = schedule_info
         data["masterJob"]["title"] = title
 

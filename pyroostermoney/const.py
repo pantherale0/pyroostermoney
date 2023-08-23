@@ -43,7 +43,8 @@ URLS = {
     "delete_child_standing_order": "api/parent/child/{user_id}/standingorder/{delete_child_standing_order}",
     "get_master_job_list": "api/parent/master-jobs",
     "boost_pot": "api/v1/families/{family_id}/children/{user_id}/pots/{pot_id}/boost",
-    "scheduled_job_action": "/api/parent/scheduled-jobs/{schedule_id}/{action}"
+    "scheduled_job_action": "/api/parent/scheduled-jobs/{schedule_id}/{action}",
+    "freeze_child_card": "/api/parent/child/{user_id}/cards/{card_id}/freeze"
 }
 
 HEADERS = {

@@ -86,6 +86,22 @@ class Card:
                 "card_event": "CONTACTLESS_LIMIT"
             })
 
+    async def set_card_status(self, active: bool=True):
+        """Freezes/Unfreezes the current card."""
+        body = {
+            "cardStatus": "active" if active else "lost",
+            "reason": "Unfreeze card" if active else "Freeze card"
+        }
+
+        await self._session.request_handler(
+            url=URLS.get("freeze_child_card").format(
+                user_id=self.user_id,
+                card_id=self.card_id
+            ),
+            body=body,
+            method="POST")
+        await self.update_family_card_entry()
+
     @staticmethod
     def parse_response(raw: dict, user_id: str, session: RoosterSession) -> 'Card':
         """RESPONSE PARSER"""

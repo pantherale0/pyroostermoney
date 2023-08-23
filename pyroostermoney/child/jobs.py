@@ -3,44 +3,16 @@
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-arguments
 from datetime import datetime
-from enum import Enum, IntEnum
 
 from pyroostermoney.api import RoosterSession
 from pyroostermoney.const import CURRENCY, URLS
-
-class JobScheduleTypes(Enum):
-    """Job schedule types."""
-    REPEATING = 2
-    ANYTIME = 1
-    UNKNOWN = -1
-
-class JobTime(IntEnum):
-    """Job times."""
-    MORNING = 12
-    AFTERNOON = 17
-    EVENING = 22
-    ANYTIME = 23
-
-class JobState(Enum):
-    """Job states."""
-    NO_PREVIOUS_STATE = 0
-    TODO = 1
-    AWAITING_APPROVAL = 2
-    APPROVED = 3
-    PAUSED = 4
-    OVERDUE = 5
-    NOT_DONE = 6
-    SKIPPED = 7
-
-    def __str__(self) -> str:
-        return str(self.name)
-
-class JobActions(Enum):
-    """All supported job actions."""
-    APPROVE = 8
-
-    def __str__(self) -> str:
-        return str(self.name).lower()
+from pyroostermoney.enum import (
+    JobActions,
+    JobScheduleTypes,
+    JobState,
+    JobTime,
+    Weekdays
+)
 
 class Job:
     """A job."""
@@ -65,6 +37,7 @@ class Job:
                  job_type,
                  schedule_type,
                  session,
+                 weekday=None,
                  user_id_list: list | None=None):
         self.allowance_period_id: int = allowance_period_id
         self.currency: str = currency
@@ -81,6 +54,7 @@ class Job:
         self.scheduled_job_id: int = scheduled_job_id
         self.state: JobState = state
         self.time_of_day: JobTime = JobTime(time_of_day)
+        self.weekdays: list[Weekdays] = weekday
         self.schedule_type: JobScheduleTypes = (
             JobScheduleTypes(schedule_type) if schedule_type is not None
             else JobScheduleTypes.UNKNOWN)
@@ -104,6 +78,15 @@ class Job:
             _due_date = datetime.strptime(obj.get("dueDate"), "%Y-%m-%d")
         else:
             _due_date = None
+
+        # parse weekdays
+        raw_weekdays = obj.get("daysOfTheWeek", None)
+        weekdays=raw_weekdays
+        if raw_weekdays is not None:
+            weekdays=[]
+            for day in raw_weekdays:
+                weekdays.append(Weekdays(day))
+
         return Job(
             allowance_period_id=int(obj.get("allowancePeriodId", -1)),
             currency=str(obj.get("currency", CURRENCY)),
@@ -124,7 +107,8 @@ class Job:
             job_type=int(obj.get("type", 0)),
             session=session,
             user_id_list=obj.get("childUserIds", None),
-            schedule_type=obj.get("scheduleType")
+            schedule_type=obj.get("scheduleType"),
+            weekday=weekdays
         )
 
     @staticmethod
