@@ -1,4 +1,5 @@
 # pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
 """Master jobs interface."""
 
 from datetime import datetime
