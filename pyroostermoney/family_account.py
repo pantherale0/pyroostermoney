@@ -4,7 +4,6 @@
 # pylint: disable=too-many-arguments
 
 import logging
-from datetime import datetime
 
 from .api import RoosterSession
 from .const import URLS, DEFAULT_BANK_NAME, DEFAULT_BANK_TYPE, CREATE_PAYMENT_BODY, CURRENCY
@@ -48,7 +47,6 @@ class FamilyAccount:
         )
         p_account = self.__dict__
         self._parse_response(raw_response=family_account, account_info=account)
-        self.last_updated = datetime.now()
         if p_account is not self.__dict__:
             self._session.events.fire_event(EventSource.FAMILY_ACCOUNT, EventType.UPDATED,
                                             {
