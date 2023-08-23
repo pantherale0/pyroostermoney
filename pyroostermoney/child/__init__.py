@@ -6,6 +6,7 @@ from datetime import datetime, date
 from pyroostermoney.const import URLS, CHILD_MAX_TRANSACTION_COUNT
 from pyroostermoney.api import RoosterSession
 from pyroostermoney.events import EventSource, EventType
+from pyroostermoney.enum import Weekdays
 from .money_pot import Pot
 from .card import Card
 from .standing_order import StandingOrder
@@ -29,6 +30,10 @@ class ChildAccount:
         self.first_name = None
         self.surname = None
         self.gender = None
+        self.allowance = None
+        self.allowance_amount = None
+        self.allowance_day = None
+        self.allowance_last_paid = None
         self.uses_real_money = -1
         self.profile_image = ""
         self.pots: list[Pot] = []
@@ -91,6 +96,10 @@ class ChildAccount:
         self.gender = "male" if raw_response["gender"] == 1 else "female"
         self.uses_real_money = raw_response["realMoneyStatus"] == 1
         self.profile_image = raw_response["profileImageUrl"]
+        self.allowance = not raw_response["locked"]
+        self.allowance_amount = raw_response["pocketMoneyAmount"]
+        self.allowance_day = Weekdays(raw_response["pocketMoneyDayRaw"]+1)
+        self.allowance_last_paid = raw_response["pocketMoneyLastPaid"]
 
     async def get_active_allowance_period(self):
         """Returns the current active allowance period."""
@@ -253,6 +262,8 @@ class ChildAccount:
             method="POST"
         )
 
+        await self.update()
+
         return bool(output.get("status") == 200)
 
     async def delete_standing_order(self, standing_order: StandingOrder):
@@ -265,13 +276,15 @@ class ChildAccount:
             method="DELETE"
         )
 
+        await self.update()
+
         return bool(output.get("status") == 200)
 
     async def update_allowance(self, paused: bool = False, amount: float = 0.0):
         """Updates the allowance for the child."""
         data = {
             "locked": paused,
-            "pocketMoneyAmount": amount,
+            "pocketMoneyAmount": amount if amount != 0.0 else self.allowance_amount,
             "stripData": True,
             "userId": self.user_id
         }
@@ -279,3 +292,4 @@ class ChildAccount:
         await self._session.request_handler(URLS.get("get_child").format(user_id=self.user_id),
                                             body=data,
                                             method="PUT")
+        await self.update()
