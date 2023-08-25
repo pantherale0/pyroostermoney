@@ -41,7 +41,7 @@ class Pot:
         self.image = image
         self.enabled = enabled
         self.value = value
-        self.target = target
+        self.target = target/100 if target is not None else None
         self.last_updated = last_updated
         self._session = session
         self._user_id = child.user_id
