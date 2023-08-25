@@ -1,5 +1,6 @@
 """Defines some standard values for a Natwest Rooster Money child."""
 # pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-arguments
 import logging
 from datetime import datetime, date
 
