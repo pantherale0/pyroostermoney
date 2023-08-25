@@ -72,3 +72,11 @@ class EventSource(Enum):
 
     def __str__(self) -> str:
         return self.name
+
+class PotMoneyActions(Enum):
+    """List of valid money management actions for pots."""
+    REMOVE = 0
+    BOOST = 1
+
+    def __str__(self) -> str:
+        return self.name.lower()

@@ -13,7 +13,8 @@ from pyroostermoney.const import (
     URLS)
 from pyroostermoney.enum import (
     EventSource,
-    EventType
+    EventType,
+    PotMoneyActions
 )
 from pyroostermoney.exceptions import NotEnoughFunds, ActionFailed
 from pyroostermoney.api import RoosterSession
@@ -49,20 +50,37 @@ class Pot:
         """
         if value > self._session.family_balance:
             raise NotEnoughFunds("family account")
+        await self._pot_money_action(PotMoneyActions.BOOST, value, reason)
+        self.value += value
+
+    async def remove_from_pot(self, value: float, reason: str = "") -> None:
+        """Remove money from the pot.
+        Value is in GBP, so providing 1.5 will remove £1.50 (or 150p)
+        """
+        if value > self.value:
+            raise NotEnoughFunds(self.pot_id)
+        await self._pot_money_action(PotMoneyActions.REMOVE, value, reason)
+        self.value -= value
+
+    async def _pot_money_action(self,
+                                action: PotMoneyActions,
+                                value: float,
+                                reason: str = "") -> None:
+        """Internal pot money action handler."""
         body = BOOST_BODY
         body["amount"]["amount"] = int(value*100)
         body["reason"] = reason
         response = await self._session.request_handler(
-            URLS.get("boost_pot").format(
+            URLS.get("pot_money_action").format(
                 user_id=self._user_id,
                 pot_id=self.pot_id,
-                family_id=self._session.family_id
+                family_id=self._session.family_id,
+                action=action
             ),
             body=body,
             method="PUT"
         )
         if response["status"] == 200:
-            self.value += value
             self._session.events.fire_event(EventSource.CHILD, EventType.UPDATED, {
                 "pot": self.pot_id,
                 "reason": reason

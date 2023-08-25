@@ -42,7 +42,7 @@ URLS = {
     "create_child_standing_order": "api/parent/child/{user_id}/standingorder/", # POST
     "delete_child_standing_order": "api/parent/child/{user_id}/standingorder/{delete_child_standing_order}", # DELETE
     "get_master_job_list": "api/parent/master-jobs", # GET
-    "boost_pot": "api/v1/families/{family_id}/children/{user_id}/pots/{pot_id}/boost", # PUT
+    "pot_money_action": "api/v1/families/{family_id}/children/{user_id}/pots/{pot_id}/{action}", # PUT
     "scheduled_job_action": "/api/parent/scheduled-jobs/{schedule_id}/{action}", # POST
     "freeze_child_card": "/api/parent/child/{user_id}/cards/{card_id}/freeze", # POST
     "get_boost_reasons": "/api/parent/boost/reasons" # GET
