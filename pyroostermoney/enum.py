@@ -80,3 +80,14 @@ class PotMoneyActions(Enum):
 
     def __str__(self) -> str:
         return self.name.lower()
+
+class PotLedgerTypes(Enum):
+    """List of valid pot ledger types for money transfer."""
+    SAVE = 0
+    SPEND = 1
+    GIVE = 2
+    GOAL = 4
+    CUSTOM = 8
+
+    def __str__(self) -> str:
+        return self.name.lower()

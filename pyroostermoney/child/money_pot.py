@@ -14,7 +14,8 @@ from pyroostermoney.const import (
 from pyroostermoney.enum import (
     EventSource,
     EventType,
-    PotMoneyActions
+    PotMoneyActions,
+    PotLedgerTypes
 )
 from pyroostermoney.exceptions import NotEnoughFunds, ActionFailed
 from pyroostermoney.api import RoosterSession
@@ -32,7 +33,8 @@ class Pot:
                  target: float | None = None,
                  last_updated: datetime | None = None,
                  session: RoosterSession = None,
-                 child = None) -> None:
+                 child = None,
+                 ledger_type: PotLedgerTypes | str | None = None) -> None:
         self.name = name
         self.ledger = ledger
         self.pot_id = pot_id
@@ -43,6 +45,7 @@ class Pot:
         self.last_updated = last_updated
         self._session = session
         self._user_id = child.user_id
+        self.ledger_type = ledger_type
 
     async def add_to_pot(self, value: float, reason: str = "") -> None:
         """Add money to the pot.
@@ -101,6 +104,7 @@ class Pot:
                     enabled=raw["potSettings"]["savePot"]["display"],
                     value=raw["safeTotal"],
                     target=raw["saveGoalAmount"],
+                    ledger_type=PotLedgerTypes.SAVE,
                     session=session,
                     child=child)
         output.append(savings)
@@ -112,6 +116,7 @@ class Pot:
                     image=None,
                     enabled=raw["potSettings"]["goalPot"]["display"],
                     value=raw["allocatedToGoals"],
+                    ledger_type=PotLedgerTypes.GOAL,
                     session=session,
                     child=child)
         output.append(goals)
@@ -123,6 +128,7 @@ class Pot:
                     image=None,
                     enabled=raw["potSettings"]["spendPot"]["display"],
                     value=raw["walletTotal"],
+                    ledger_type=PotLedgerTypes.SPEND,
                     session=session,
                     child=child)
         output.append(goals)
@@ -134,6 +140,7 @@ class Pot:
                     image=None,
                     enabled=raw["potSettings"]["givePot"]["display"],
                     value=raw["giveAmount"],
+                    ledger_type=PotLedgerTypes.GIVE,
                     session=session,
                     child=child)
         output.append(goals)
@@ -148,6 +155,7 @@ class Pot:
                 enabled=True, # custom pots enabled by default
                 value=pot["availableBalance"]["amount"],
                 target=pot["customLedgerMetadata"]["upperLimit"]["amount"],
+                ledger_type=PotLedgerTypes.CUSTOM,
                 last_updated=pot["updated"],
                 session=session,
                 child=child

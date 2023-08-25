@@ -45,7 +45,8 @@ URLS = {
     "pot_money_action": "api/v1/families/{family_id}/children/{user_id}/pots/{pot_id}/{action}", # PUT
     "scheduled_job_action": "/api/parent/scheduled-jobs/{schedule_id}/{action}", # POST
     "freeze_child_card": "/api/parent/child/{user_id}/cards/{card_id}/freeze", # POST
-    "get_boost_reasons": "/api/parent/boost/reasons" # GET
+    "get_boost_reasons": "/api/parent/boost/reasons", # GET
+    "pot_money_transfer": "/api/v1/families/{family_id}/children/{user_id}/potTransfer" # PUT
 }
 
 HEADERS = {
@@ -105,6 +106,18 @@ BOOST_BODY = {
         "flowSource": "spend pot"
     },
     "reason": ""
+}
+
+TRANSFER_BODY = {
+    "childUserId": 0,
+    "destinationLedgerType": "",
+    "familyId": 0,
+    "sourceLedgerType": "",
+    "transferAmount": {
+        "amount": 0,
+        "currency": CURRENCY,
+        "precision": DEFAULT_PRECISION
+    }
 }
 
 CREATE_MASTER_JOB_BODY = {

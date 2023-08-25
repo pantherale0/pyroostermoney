@@ -3,10 +3,11 @@
 import logging
 from datetime import datetime, date
 
-from pyroostermoney.const import URLS, CHILD_MAX_TRANSACTION_COUNT
+from pyroostermoney.const import URLS, CHILD_MAX_TRANSACTION_COUNT, TRANSFER_BODY
 from pyroostermoney.api import RoosterSession
 from pyroostermoney.events import EventSource, EventType
-from pyroostermoney.enum import Weekdays
+from pyroostermoney.enum import Weekdays, PotLedgerTypes
+from pyroostermoney.exceptions import ActionFailed
 from .money_pot import Pot
 from .card import Card
 from .standing_order import StandingOrder
@@ -278,3 +279,43 @@ class ChildAccount:
                                             body=data,
                                             method="PUT")
         await self.update()
+
+    async def pot_money_transfer(
+            self,
+            source: PotLedgerTypes,
+            destination: PotLedgerTypes,
+            amount: float,
+            to_custom_pot_id: str | None = None,
+            from_custom_pot_id: str | None = None):
+        """Transfers money between two pots.
+        Much like pot money management, the amount is in GBP, so passing 1.5 will move £1.50.
+        """
+        body = TRANSFER_BODY
+        body["childUserId"] = self.user_id
+        body["familyId"] = self._session.family_id
+        body["destinationLedgerType"] = str(destination)
+        body["sourceLedgerType"] = str(source)
+        body["transferAmount"]["amount"] = int(amount*100)
+
+        # handle custom pots
+        if source == PotLedgerTypes.CUSTOM:
+            if from_custom_pot_id is not None:
+                body["fromCustomPotId"] = from_custom_pot_id
+            else:
+                raise ValueError("Missing argument for 'from_custom_pot_id")
+        if destination == PotLedgerTypes.CUSTOM:
+            if from_custom_pot_id is not None:
+                body["toCustomPotId"] = to_custom_pot_id
+            else:
+                raise ValueError("Missing argument for 'to_custom_pot_id")
+
+        response = await self._session.request_handler(
+            URLS.get("pot_money_transfer").format(
+                family_id=self._session.family_id,
+                user_id=self.user_id
+            )
+        )
+        if response["status"] == 200:
+            await self.get_pocket_money() # Call this to update pots.
+        else:
+            raise ActionFailed("HTTP Response Error", response)
