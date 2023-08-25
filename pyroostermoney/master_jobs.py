@@ -87,3 +87,11 @@ class MasterJobs:
         for job in jobs:
             self.jobs.append(job)
         return self.jobs
+
+    def get_child_master_job_list(self, child: ChildAccount) -> list[Job]:
+        """Returns all of the master jobs for a child."""
+        child_master_jobs = []
+        for job in self.jobs:
+            if child.user_id in job.user_id_list:
+                child_master_jobs.append(job)
+        return child_master_jobs
