@@ -18,3 +18,14 @@ class AuthenticationExpired(Exception):
 
     def __init__(self) -> None:
         super().__init__("Session has expired, call 'async_login()' again.")
+
+class NotEnoughFunds(Exception):
+    """Not enough funds in x."""
+    def __init__(self, fund_source) -> None:
+        super().__init__(
+            f"Not enough available funds in source {fund_source} to execute this operation.")
+
+class ActionFailed(Exception):
+    """A given action failed because on an unspecified error."""
+    def __init__(self, *args: object) -> None:
+        super().__init__("Action failed due to an unspecified error.", *args)

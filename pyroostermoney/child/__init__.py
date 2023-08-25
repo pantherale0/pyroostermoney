@@ -183,7 +183,7 @@ class ChildAccount:
             user_id=self.user_id
         )
         response = await self._session.request_handler(url)
-        self.pots: list[Pot] = Pot.convert_response(response["response"])
+        self.pots: list[Pot] = Pot.convert_response(response["response"], self._session, self)
 
         return self.pots
 
@@ -236,21 +236,6 @@ class ChildAccount:
             })
 
         return self.standing_orders
-
-    # async def add_to_pot(self, value: float, target: Pot) -> Pot:
-    #     """Add money to a pot."""
-
-    # async def remove_from_pot(self, value: float, target: Pot) -> Pot:
-    #     """Remove money from a pot"""
-
-    # async def transfer_money(self, value: float, source: Pot, target: Pot) -> Pot:
-    #     """Transfers money between two pots."""
-
-    # async def create_pot(self, new_pot: Pot) -> Pot:
-    #     """Create a new pot."""
-
-    # async def delete_pot(self, pot: Pot) -> bool:
-    #     """Delete a pot."""
 
     async def create_standing_order(self, standing_order: StandingOrder):
         """Create a standing order."""

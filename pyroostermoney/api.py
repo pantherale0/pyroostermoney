@@ -27,6 +27,9 @@ class RoosterSession:
         self._logged_in = False
         self._logging_in = asyncio.Lock()
         self.events = Events()
+        # below is stored here because other services (like money pots) rely on this
+        self.family_id = None
+        self.family_balance = None
 
     async def _send_request(self,
                       url,

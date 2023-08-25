@@ -23,28 +23,29 @@ GOAL_POT_ID="GOAL_POT"
 CHILD_MAX_TRANSACTION_COUNT=15 # maximum count for get_spend_history
 
 URLS = {
-    "login": "api/v1/parent",
-    "get_account_info": "api/parent",
-    "get_child": "api/parent/child/{user_id}",
-    "get_child_allowance_periods": "api/parent/child/{user_id}/allowance-periods",
-    "get_top_up_methods": "api/parent/acquirer/topup/methods?currency={currency}",
-    "get_available_cards": "api/parent/acquirer/cards",
-    "get_family_account": "api/parent/family/account",
-    "get_child_pocket_money": "api/parent/child/{user_id}/pocketmoney",
-    "get_child_allowance_period_jobs": "api/parent/child/{user_id}/allowance-periods/{allowance_period_id}/jobs",
-    "get_master_jobs": "api/parent/master-jobs",
-    "get_child_spend_history": "api/parent/child/{user_id}/spendHistory?count={count}",
-    "create_payment": "api/parent/acquirer/create-payment",
-    "get_child_card_details": "api/parent/child/{user_id}/card/details",
-    "get_child_card_pin": "api/parent/child/{user_id}/cards/{card_id}/pin",
-    "get_family_account_cards": "api/parent/family/cards",
-    "get_child_standing_orders": "api/parent/child/{user_id}/standingorder",
-    "create_child_standing_order": "api/parent/child/{user_id}/standingorder/",
-    "delete_child_standing_order": "api/parent/child/{user_id}/standingorder/{delete_child_standing_order}",
-    "get_master_job_list": "api/parent/master-jobs",
-    "boost_pot": "api/v1/families/{family_id}/children/{user_id}/pots/{pot_id}/boost",
-    "scheduled_job_action": "/api/parent/scheduled-jobs/{schedule_id}/{action}",
-    "freeze_child_card": "/api/parent/child/{user_id}/cards/{card_id}/freeze"
+    "login": "api/v1/parent", # POST
+    "get_account_info": "api/parent", # GET
+    "get_child": "api/parent/child/{user_id}", # GET
+    "get_child_allowance_periods": "api/parent/child/{user_id}/allowance-periods", # GET
+    "get_top_up_methods": "api/parent/acquirer/topup/methods?currency={currency}", # GET
+    "get_available_cards": "api/parent/acquirer/cards", # GET
+    "get_family_account": "api/parent/family/account", # GET
+    "get_child_pocket_money": "api/parent/child/{user_id}/pocketmoney", # GET
+    "get_child_allowance_period_jobs": "api/parent/child/{user_id}/allowance-periods/{allowance_period_id}/jobs", # GET
+    "get_master_jobs": "api/parent/master-jobs", # GET
+    "get_child_spend_history": "api/parent/child/{user_id}/spendHistory?count={count}", # GET
+    "create_payment": "api/parent/acquirer/create-payment", # POST
+    "get_child_card_details": "api/parent/child/{user_id}/card/details", # GET
+    "get_child_card_pin": "api/parent/child/{user_id}/cards/{card_id}/pin", # GET
+    "get_family_account_cards": "api/parent/family/cards", # GET
+    "get_child_standing_orders": "api/parent/child/{user_id}/standingorder", # GET
+    "create_child_standing_order": "api/parent/child/{user_id}/standingorder/", # POST
+    "delete_child_standing_order": "api/parent/child/{user_id}/standingorder/{delete_child_standing_order}", # DELETE
+    "get_master_job_list": "api/parent/master-jobs", # GET
+    "boost_pot": "api/v1/families/{family_id}/children/{user_id}/pots/{pot_id}/boost", # PUT
+    "scheduled_job_action": "/api/parent/scheduled-jobs/{schedule_id}/{action}", # POST
+    "freeze_child_card": "/api/parent/child/{user_id}/cards/{card_id}/freeze", # POST
+    "get_boost_reasons": "/api/parent/boost/reasons" # GET
 }
 
 HEADERS = {

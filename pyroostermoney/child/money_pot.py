@@ -4,7 +4,19 @@
 # pylint: disable=too-few-public-methods
 from datetime import datetime
 
-from pyroostermoney.const import SPEND_POT_ID, SAVINGS_POT_ID, GIVE_POT_ID, GOAL_POT_ID
+from pyroostermoney.const import (
+    SPEND_POT_ID,
+    SAVINGS_POT_ID,
+    GIVE_POT_ID,
+    GOAL_POT_ID,
+    BOOST_BODY,
+    URLS)
+from pyroostermoney.enum import (
+    EventSource,
+    EventType
+)
+from pyroostermoney.exceptions import NotEnoughFunds, ActionFailed
+from pyroostermoney.api import RoosterSession
 
 class Pot:
     """A money pot."""
@@ -17,7 +29,9 @@ class Pot:
                  enabled: bool,
                  value: float,
                  target: float | None = None,
-                 last_updated: datetime | None = None) -> None:
+                 last_updated: datetime | None = None,
+                 session: RoosterSession = None,
+                 child = None) -> None:
         self.name = name
         self.ledger = ledger
         self.pot_id = pot_id
@@ -26,9 +40,38 @@ class Pot:
         self.value = value
         self.target = target
         self.last_updated = last_updated
+        self._session = session
+        self._user_id = child.user_id
+
+    async def add_to_pot(self, value: float, reason: str = "") -> None:
+        """Add money to the pot.
+        Value is in GBP, so providing 1.5 will add £1.50 (or 150p)
+        """
+        if value > self._session.family_balance:
+            raise NotEnoughFunds("family account")
+        body = BOOST_BODY
+        body["amount"]["amount"] = int(value*100)
+        body["reason"] = reason
+        response = await self._session.request_handler(
+            URLS.get("boost_pot").format(
+                user_id=self._user_id,
+                pot_id=self.pot_id,
+                family_id=self._session.family_id
+            ),
+            body=body,
+            method="PUT"
+        )
+        if response["status"] == 200:
+            self.value += value
+            self._session.events.fire_event(EventSource.CHILD, EventType.UPDATED, {
+                "pot": self.pot_id,
+                "reason": reason
+            })
+        else:
+            raise ActionFailed("HTTP Response Error", response)
 
     @staticmethod
-    def convert_response(raw: dict) -> list['Pot']:
+    def convert_response(raw: dict, session: RoosterSession, child) -> list['Pot']:
         """Converts a raw response into a list of Pot"""
         output: list[Pot] = []
 
@@ -39,7 +82,9 @@ class Pot:
                     image=None,
                     enabled=raw["potSettings"]["savePot"]["display"],
                     value=raw["safeTotal"],
-                    target=raw["saveGoalAmount"])
+                    target=raw["saveGoalAmount"],
+                    session=session,
+                    child=child)
         output.append(savings)
 
         # goal pot
@@ -48,7 +93,9 @@ class Pot:
                     pot_id=GOAL_POT_ID,
                     image=None,
                     enabled=raw["potSettings"]["goalPot"]["display"],
-                    value=raw["allocatedToGoals"])
+                    value=raw["allocatedToGoals"],
+                    session=session,
+                    child=child)
         output.append(goals)
 
         # spend pot
@@ -57,7 +104,9 @@ class Pot:
                     pot_id=SPEND_POT_ID,
                     image=None,
                     enabled=raw["potSettings"]["spendPot"]["display"],
-                    value=raw["walletTotal"])
+                    value=raw["walletTotal"],
+                    session=session,
+                    child=child)
         output.append(goals)
 
         # spend pot
@@ -66,7 +115,9 @@ class Pot:
                     pot_id=GIVE_POT_ID,
                     image=None,
                     enabled=raw["potSettings"]["givePot"]["display"],
-                    value=raw["giveAmount"])
+                    value=raw["giveAmount"],
+                    session=session,
+                    child=child)
         output.append(goals)
 
         # now process custom pots
@@ -79,7 +130,9 @@ class Pot:
                 enabled=True, # custom pots enabled by default
                 value=pot["availableBalance"]["amount"],
                 target=pot["customLedgerMetadata"]["upperLimit"]["amount"],
-                last_updated=pot["updated"]
+                last_updated=pot["updated"],
+                session=session,
+                child=child
             )
             output.append(custom_pot)
 

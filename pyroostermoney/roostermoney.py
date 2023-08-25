@@ -37,6 +37,8 @@ class RoosterMoney(RoosterSession):
         self = cls(remove_card_information=remove_card_information)
         await self._session_start(username, password)
         await self.get_family_account()
+        self.family_id = self.family_account.family_id
+        self.family_balance = self.family_account.balance
         self.master_jobs = MasterJobs(self)
         await self.update()
         self._init = False
@@ -51,6 +53,7 @@ class RoosterMoney(RoosterSession):
         await self.master_jobs.update()
         self.master_job_list = self.master_jobs.jobs
         await self.family_account.update()
+        self.family_balance = self.family_account.balance
         if self._init is False:
             for child in self.children:
                 await child.update()
