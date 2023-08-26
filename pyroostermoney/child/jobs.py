@@ -87,6 +87,12 @@ class Job:
             for day in raw_weekdays:
                 weekdays.append(Weekdays(day))
 
+        # handle master job list correctly
+        if not bool(obj.get("dueAnyDay", False)) and int(obj.get("scheduledJobId", 0)) == 0:
+            obj["scheduleType"] = JobScheduleTypes.REPEATING
+        if bool(obj.get("dueAnyDay", False)) and int(obj.get("scheduledJobId", 0)) == 0:
+            obj["scheduleType"] = JobScheduleTypes.ANYTIME
+
         return Job(
             allowance_period_id=int(obj.get("allowancePeriodId", -1)),
             currency=str(obj.get("currency", CURRENCY)),
