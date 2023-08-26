@@ -83,9 +83,7 @@ class MasterJobs:
         response = await self._session.request_handler(
             url=URLS.get("get_master_job_list")
         )
-        jobs = Job.convert_response(response.get("response"), self._session)
-        for job in jobs:
-            self.jobs.append(job)
+        self.jobs = Job.convert_response(response.get("response"), self._session)
         return self.jobs
 
     def get_child_master_job_list(self, child: ChildAccount) -> list[Job]:
