@@ -74,7 +74,7 @@ class FamilyAccount:
                 year=search_date.year
             )
         )
-        if search_date is date.today():
+        if search_date == date.today():
             self.current_month_transactions = self._parse_transaction_history(history)
             if len(self.current_month_transactions) > 0:
                 self.latest_transaction = self.current_month_transactions[0]
