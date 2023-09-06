@@ -4,6 +4,7 @@
 # pylint: disable=too-many-arguments
 
 import logging
+from datetime import date
 
 from .api import RoosterSession
 from .const import URLS, DEFAULT_BANK_NAME, DEFAULT_BANK_TYPE, CREATE_PAYMENT_BODY, CURRENCY
@@ -20,6 +21,8 @@ class FamilyAccount:
                  session: RoosterSession) -> None:
         self._session = session
         self._parse_response(raw_response, account_info)
+        self.current_month_transactions = None
+        self.latest_transaction = None
 
     def _parse_response(self, raw_response: dict, account_info: dict):
         """Parses the raw response."""
@@ -41,6 +44,45 @@ class FamilyAccount:
         if self.balance is not None:
             self.balance = float(self.balance)
 
+    def _parse_transaction_history(self, raw_response: dict) -> dict:
+        """Parses a transaction history response."""
+        transactions = []
+        if "response" in raw_response:
+            raw_response=raw_response["response"]
+
+        for transaction in raw_response:
+            parsed = {
+                "amount": 0,
+                "reason": transaction["reason"],
+                "type": transaction["transactionType"]
+            }
+            if transaction["creditAmount"]["amount"] > 0:
+                parsed["amount"] = transaction["creditAmount"]["amount"]/100
+            else:
+                parsed["amount"] = 0-(transaction["debitAmount"]["amount"]/100)
+            transactions.append(parsed)
+        return transactions
+
+    async def get_transaction_history(self, search_date: date = None):
+        """Gets the transaction history.
+        If search_date is set to None this also acts an updater method."""
+        if search_date is None:
+            search_date = date.today()
+        history = await self._session.request_handler(
+            url=URLS.get("get_family_account_statement").format(
+                month=search_date.month,
+                year=search_date.year
+            )
+        )
+        if search_date is date.today():
+            self.current_month_transactions = self._parse_transaction_history(history)
+            if len(self.current_month_transactions) > 0:
+                self.latest_transaction = self.current_month_transactions[0]
+            else:
+                self.latest_transaction = None
+            return self.current_month_transactions
+        return self._parse_transaction_history(history)
+
     async def update(self):
         """Updates the FamilyAccount object data."""
         family_account = await self._session.request_handler(
@@ -50,6 +92,7 @@ class FamilyAccount:
         )
         p_account = self.__dict__
         self._parse_response(raw_response=family_account, account_info=account)
+        await self.get_transaction_history()
         if p_account is not self.__dict__:
             self._session.events.fire_event(EventSource.FAMILY_ACCOUNT, EventType.UPDATED,
                                             {

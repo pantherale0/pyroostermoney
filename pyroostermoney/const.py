@@ -1,7 +1,7 @@
 # pylint: disable=line-too-long
 """Static Rooster Money variables"""
 
-VERSION="0.3.7"
+VERSION="2023.9.0"
 BASE_URL="https://api.rooster.money"
 OAUTH_TOKEN_URL="https://auth.rooster.money/oidc/token"
 LANGUAGE="en-GB"
@@ -25,6 +25,7 @@ CHILD_MAX_TRANSACTION_COUNT=15 # maximum count for get_spend_history
 URLS = {
     "login": "api/v1/parent", # POST
     "get_account_info": "api/parent", # GET
+    "get_family_account_statement": "api/parent/family/statement/{year}/{month}", # GET
     "get_child": "api/parent/child/{user_id}", # GET
     "get_child_allowance_periods": "api/parent/child/{user_id}/allowance-periods", # GET
     "get_top_up_methods": "api/parent/acquirer/topup/methods?currency={currency}", # GET
