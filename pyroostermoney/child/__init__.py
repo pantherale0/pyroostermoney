@@ -114,13 +114,16 @@ class ChildAccount:
                             if datetime.strptime(p["startDate"], "%Y-%m-%d").date() <=
                             search_date.date() <=
                             datetime.strptime(p["endDate"], "%Y-%m-%d").date()]
-            if len(active_periods) != 1 and search_date.date() < date.today():
-                raise LookupError("No allowance period found")
-            # run again but minus 7 days to address https://github.com/pantherale0/pyroostermoney/issues/17
-            elif len(active_periods) != 1:
-                search_date = search_date - timedelta(days=7)
+            if len(allowance_periods) > 1:
+                if len(active_periods) != 1 and search_date.date() < date.today():
+                    raise LookupError("No allowance period found")
+                # run again but minus 7 days to address pyroostermoney/17
+                if len(active_periods) != 1:
+                    search_date = search_date - timedelta(days=7)
+                else:
+                    break
             else:
-                break
+                return None
 
         active_periods = active_periods[0]
         self.active_allowance_period_id = int(active_periods.get("allowancePeriodId"))
