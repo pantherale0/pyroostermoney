@@ -2,7 +2,7 @@
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
 import logging
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from pyroostermoney.const import URLS, CHILD_MAX_TRANSACTION_COUNT, TRANSFER_BODY
 from pyroostermoney.api import RoosterSession
@@ -108,12 +108,19 @@ class ChildAccount:
         allowance_periods = await self._session.request_handler(
             url=URLS.get("get_child_allowance_periods").format(user_id=self.user_id))
         allowance_periods = allowance_periods["response"]
-        active_periods = [p for p in allowance_periods
-                          if datetime.strptime(p["startDate"], "%Y-%m-%d").date() <=
-                          date.today() <=
-                          datetime.strptime(p["endDate"], "%Y-%m-%d").date()]
-        if len(active_periods) != 1:
-            raise LookupError("No allowance period found")
+        search_date = datetime.now()
+        while True:
+            active_periods = [p for p in allowance_periods
+                            if datetime.strptime(p["startDate"], "%Y-%m-%d").date() <=
+                            search_date.date() <=
+                            datetime.strptime(p["endDate"], "%Y-%m-%d").date()]
+            if len(active_periods) != 1 and search_date.date() < date.today():
+                raise LookupError("No allowance period found")
+            # run again but minus 7 days to address https://github.com/pantherale0/pyroostermoney/issues/17
+            elif len(active_periods) != 1:
+                search_date = search_date - timedelta(days=7)
+            else:
+                break
 
         active_periods = active_periods[0]
         self.active_allowance_period_id = int(active_periods.get("allowancePeriodId"))
