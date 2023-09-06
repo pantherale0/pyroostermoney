@@ -2,7 +2,7 @@
 """Defines the class for the family account."""
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-arguments
-
+# pylint: disable=no-else-raise
 import logging
 from datetime import date
 
