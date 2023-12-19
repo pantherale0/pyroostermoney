@@ -1,19 +1,19 @@
 # pylint: disable=line-too-long
 """Static Rooster Money variables"""
 
-VERSION="2023.12.0"
+VERSION="2023.12.1"
 BASE_URL="https://api.rooster.money"
 OAUTH_TOKEN_URL="https://auth.rooster.money/oidc/token"
 LANGUAGE="en-GB"
 COUNTRY="gb"
 CURRENCY="GBP"
-TIMEZONE_ID=60
-TIMEZONE="GMT+01:00"
+TIMEZONE_ID=0
+TIMEZONE="GMT+00:00"
 DEFAULT_PRECISION=2
 DEFAULT_BANK_NAME="Rooster Money"
 DEFAULT_BANK_TYPE="Business"
 DEFAULT_JOB_IMAGE_URL="https://images.roostermoney.com/static/default_job_icon.png"
-MOBILE_APP_VERSION="10.4.1"
+MOBILE_APP_VERSION="10.5.4"
 
 SAVINGS_POT_ID="SAVE_POT"
 SPEND_POT_ID="SPEND_POT"

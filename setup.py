@@ -3,7 +3,7 @@
 from setuptools import setup
 
 setup(name="pyroostermoney",
-      version="2023.12.0",
+      version="2023.12.1",
       description="A RoosterMoney integration for Python.",
       url="https://github.com/pantherale0/pyroostermoney",
       author="pantherale0",

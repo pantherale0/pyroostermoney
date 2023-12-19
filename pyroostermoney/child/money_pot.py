@@ -154,7 +154,7 @@ class Pot:
                 image=pot["customLedgerMetadata"].get("imageUrl", ""),
                 enabled=True, # custom pots enabled by default
                 value=pot["availableBalance"]["amount"],
-                target=pot["customLedgerMetadata"]["upperLimit"]["amount"],
+                target=pot["customLedgerMetadata"].get("upperLimit", {}).get("amount", 0),
                 ledger_type=PotLedgerTypes.CUSTOM,
                 last_updated=pot["updated"],
                 session=session,
